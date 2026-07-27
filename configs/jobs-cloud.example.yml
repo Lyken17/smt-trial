@@ -1,0 +1,11 @@
+results_dir: $CVC5_CLOUD_ROOT/benchmark-results/aws
+formulas:
+  - s3://REPLACE_WITH_BUCKET/benchmarks
+
+job_options:
+  timeout_secs: 200
+  solver_options:
+    - --mode
+    - distributed
+    - --jobs-per-node
+    - "8"

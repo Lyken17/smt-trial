@@ -1,0 +1,9 @@
+.git
+.cache
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+benchmark-results
+benchmarks
+test-results

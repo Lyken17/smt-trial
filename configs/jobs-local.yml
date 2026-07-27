@@ -1,0 +1,9 @@
+results_dir: $CVC5_CLOUD_ROOT/test-results
+formulas: []
+
+job_options:
+  timeout_secs: 200
+  solver_options: []
+
+formula_dir_test_local: $CVC5_CLOUD_ROOT/benchmarks/smoke
+expected_file_test_local: $CVC5_CLOUD_ROOT/benchmarks/smoke/expected.yml

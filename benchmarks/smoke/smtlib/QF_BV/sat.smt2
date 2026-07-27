@@ -1,0 +1,6 @@
+(set-logic QF_BV)
+(set-info :status sat)
+(declare-const x (_ BitVec 16))
+(assert (= (bvadd x #x0001) #x002a))
+(check-sat)
+(exit)

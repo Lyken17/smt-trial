@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cvc5-cloud"
+version = "0.1.0"
+description = "Distributed cvc5 baselines for the SMT-COMP 2026 cloud track"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "cvc5-cloud contributors"}]
+dependencies = []
+
+[project.scripts]
+cvc5-cloud = "cvc5_cloud.runner:main"
+
+[tool.setuptools.packages.find]
+include = ["cvc5_cloud*"]
+

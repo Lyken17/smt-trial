@@ -1,0 +1,21 @@
+project: cvc5-cloud-local
+profile: default
+region: us-east-1
+solver_type: smt
+
+global_solver_options:
+  is_distributed: false
+  num_worker_nodes_per_leader: 0
+  ec2_instance_type: m6i.4xlarge
+  disk_size: 32
+
+solvers:
+  - name: cvc5-sequential
+    author: cvc5-cloud
+    docker_dir: $CVC5_CLOUD_ROOT
+    dockerfile: aws-build/Dockerfile
+
+  - name: cvc5-portfolio
+    author: cvc5-cloud
+    docker_dir: $CVC5_CLOUD_ROOT
+    dockerfile: aws-build/Dockerfile
