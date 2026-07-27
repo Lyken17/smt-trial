@@ -1,0 +1,65 @@
+{
+  "benchmarks": [
+    {
+      "logic": "QF_BV",
+      "path": "smtlib/QF_BV/sat.smt2",
+      "sha256": "6cc4522b4fd4821254121a73b8a47ea0209d3b73a024cc1c5331e9c61f849895",
+      "status": "sat"
+    },
+    {
+      "logic": "QF_BV",
+      "path": "smtlib/QF_BV/unsat.smt2",
+      "sha256": "0a72b72df82dcfe766df356a631846e9738dfaccf8c82431a7923a305d209969",
+      "status": "unsat"
+    },
+    {
+      "logic": "QF_LIA",
+      "path": "smtlib/QF_LIA/sat.smt2",
+      "sha256": "93510f9371141e3159bd8d1c4065ecfc4316bd691307708b033b12d87538244d",
+      "status": "sat"
+    },
+    {
+      "logic": "QF_LIA",
+      "path": "smtlib/QF_LIA/unsat.smt2",
+      "sha256": "87e07915fa3e6583ceaa0f7215c43bc4bf4e42a8acb97d4015d6603c25fd13c8",
+      "status": "unsat"
+    },
+    {
+      "logic": "QF_NIA",
+      "path": "smtlib/QF_NIA/sat.smt2",
+      "sha256": "2769d01a7c92e3648528a4f3e088a36c319daa62ffdeb2ad91aa1ae2395fa82b",
+      "status": "sat"
+    },
+    {
+      "logic": "QF_NIA",
+      "path": "smtlib/QF_NIA/unsat.smt2",
+      "sha256": "5c5303d013a0e6c5e74a988d0376d50c67d8756335114fcc6ae4c65282214529",
+      "status": "unsat"
+    },
+    {
+      "logic": "QF_S",
+      "path": "smtlib/QF_S/sat.smt2",
+      "sha256": "76fb50c9b722f84a968f2ecd74962e99433a9c0e47549f3e033df324db7d1d82",
+      "status": "sat"
+    },
+    {
+      "logic": "QF_S",
+      "path": "smtlib/QF_S/unsat.smt2",
+      "sha256": "9791661b435496ab6fcc72f1f9a5396f055057fcac56150d83f5f0a23779be70",
+      "status": "unsat"
+    },
+    {
+      "logic": "UF",
+      "path": "smtlib/UF/sat.smt2",
+      "sha256": "0a964840c71dd5027be0d180be84c8e1442a1bf814e65f466f503b8820ecfaea",
+      "status": "sat"
+    },
+    {
+      "logic": "UF",
+      "path": "smtlib/UF/unsat.smt2",
+      "sha256": "492321f6ed209fe1374d80a6942f2165b4a70ba4def929343ed6bf034977a155",
+      "status": "unsat"
+    }
+  ],
+  "selection": "checked-in correctness smoke suite"
+}

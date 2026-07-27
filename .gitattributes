@@ -1,0 +1,2 @@
+# Preserve the exact upstream bytes covered by benchmark manifest checksums.
+benchmarks/smtlib-2025/** -whitespace

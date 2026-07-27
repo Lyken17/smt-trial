@@ -1,34 +1,144 @@
-# cvc5-cloud
+# cvc5 Cloud Configuration Challenge
 
-This repository packages a pinned cvc5 competition build and three baselines
-for the [SMT-COMP 2026 cloud track][cloud-track]:
+Tune a pinned [cvc5][cvc5] build to solve as many SMT benchmarks as possible.
+The starter is intentionally simple: one sequential cvc5 process with no
+extra options. The goal is to improve its pass rate through logic-aware solver
+configuration, local portfolios, and cloud worker use.
 
-1. **Sequential** - one unmodified cvc5 process.
-2. **Local portfolio** - cvc5's `smtcomp2026` logic-aware internal portfolio,
-   using up to eight concurrent jobs on one node.
-3. **Distributed seeded race** - one internal portfolio on every AWS node,
-   with distinct cvc5 and SAT random seeds; the first definitive result wins.
+This is an independent training challenge inspired by
+[Anthropic's original performance take-home][anthropic-takehome] and packaged
+around the distributed interface prepared for the
+[SMT-COMP cloud track][cloud-track]. The official 2026 site states that the
+cloud track was not held because suitable execution infrastructure was
+unavailable, so this repository is a classroom and research competition, not
+an official SMT-COMP 2026 entry.
 
-The distributed baseline is intentionally simple. It exercises all cloud
-nodes and provides a reliable measurement floor before adding partitioning or
-lemma sharing. It is not expected to scale linearly because nodes do redundant
-work.
+AI coding and research agents are allowed and encouraged. They must optimize
+the real solver configuration, not alter the evaluator or encode benchmark
+answers.
 
-## Baseline Results
+## Score
 
-The current proxy uses 95 labeled benchmarks sampled deterministically from
-nine SMT-LIB 2025 logics, with a 10-second per-instance timeout:
+The checked-in training suite contains 95 labeled SMT-LIB 2025 formulas from
+nine logics. Every formula has a 10-second wall-clock limit.
 
-| Baseline | Solved | Wrong | Unknown | PAR-2 (s) |
-|---|---:|---:|---:|---:|
-| Sequential | 73/95 | 0 | 22 | 450.906 |
-| Portfolio-8 | 83/95 | 0 | 12 | 253.644 |
-| Seeded race 4x2 | 83/95 | 0 | 12 | 261.020 |
+1. The primary score is the number of correct `sat` or `unsat` results.
+2. `unknown` and timeouts are unsolved cases.
+3. A wrong `sat` or `unsat` result fails evaluation.
+4. Total wall time and PAR-2 are reported as secondary measurements.
 
-The built-in cvc5 portfolio adds ten solves over sequential. The seeded race
-is a single-host emulation here; its value must be measured on multiple AWS
-nodes. See [`docs/baselines.md`](docs/baselines.md) for logic-level results,
-methodology, and reproducibility details.
+The starter sequential configuration solves **73/95** cases with no wrong
+answers. The target is **95/95**. Timing varies by machine, so compare pass
+counts first and use timing only under controlled conditions.
+
+## Quick Start
+
+The local build requires Python 3.10+, CMake, Ninja, and GCC 10+ or Clang 12+.
+The bootstrap script installs pinned Python build tools and checks out the
+exact cvc5 competition revision.
+
+```bash
+make setup
+make build
+make test
+make smoke
+make score
+```
+
+The cvc5 checkout, build, and virtual environment stay under ignored
+directories. Scoring prints to the terminal and does not create a results
+tree.
+
+For a faster targeted experiment:
+
+```bash
+make score SCORE_ARGS="--logic NRA"
+make score SCORE_ARGS="--logic QF_ALIA --limit 4 --timeout 3"
+```
+
+Run `python tests/submission_tests.py --help` for all evaluator options.
+
+## Submission Surface
+
+Edit [`submission.py`](submission.py). Its only required function is:
+
+```python
+def get_config(logic: str, workers: int) -> dict[str, object]:
+    return {
+        "mode": "sequential",
+        "jobs_per_node": 1,
+        "local_replicas": 1,
+        "cvc5_args": (),
+    }
+```
+
+The evaluator supplies the uppercase SMT-LIB logic and available remote worker
+count. A submission may return different settings per logic.
+
+| Field | Meaning |
+|---|---|
+| `mode` | `sequential`, `portfolio`, or `distributed` |
+| `jobs_per_node` | cvc5 jobs used by each internal portfolio |
+| `local_replicas` | seeded local portfolios in distributed mode |
+| `cvc5_args` | extra complete cvc5 option tokens |
+
+Use `--option=value` for options that require a value. Language, timeout, and
+portfolio-control flags are owned by the runner so every submission is scored
+under the same contract.
+
+The same `submission.py` is copied into the AWS image and loaded by
+`aws-build/solver_cmd.py`. Local evaluation and cloud packaging therefore use
+one source of truth.
+
+## Rules
+
+Treat `tests/`, `benchmarks/`, `cvc5_cloud/`, `aws-build/`, and `configs/` as
+frozen challenge infrastructure. The intended submission diff is
+`submission.py`.
+
+Allowed:
+
+- use coding agents, search agents, scripts, and automated experiments;
+- inspect benchmark syntax, cvc5 help, logs, and timing data;
+- select different valid cvc5 options for different SMT-LIB logics;
+- use the provided portfolio and distributed modes.
+
+Not allowed:
+
+- modify tests, manifests, benchmark formulas, expected results, or timeouts;
+- hardcode answers, benchmark filenames, checksums, or evaluation order;
+- make solver decisions by reading expected-status metadata;
+- report scores from a modified evaluator.
+
+When using an agent, instruct it to optimize only `submission.py` and verify
+with the canonical scorer. Before sharing a result, run:
+
+```bash
+git diff origin/main -- tests/ benchmarks/ cvc5_cloud/ aws-build/ configs/
+make test
+make smoke
+make score
+```
+
+The first command must be empty for a challenge submission.
+
+## Repository Layout
+
+| Path | Purpose |
+|---|---|
+| `submission.py` | entrant-controlled cvc5 configuration |
+| `tests/submission_tests.py` | canonical scorer |
+| `benchmarks/smtlib-2025/` | fixed 95-case training suite |
+| `benchmarks/smoke/` | fast 10-case correctness suite |
+| `cvc5_cloud/` | validated local and distributed runner |
+| `aws-build/` | competition Dockerfile and harness adapter |
+| `configs/` | local and distributed infrastructure definitions |
+| `scripts/` | reproducible cvc5 and harness setup |
+| `versions.env` | pinned source revisions |
+
+See [`docs/architecture.md`](docs/architecture.md) for launcher behavior and
+[`docs/submission-checklist.md`](docs/submission-checklist.md) before testing a
+cloud entry.
 
 ## Pinned Inputs
 
@@ -38,109 +148,10 @@ methodology, and reproducibility details.
   `e88c32ae6173a1e0713a0e727af424d6298c6949`
 - SMT-LIB 2025 non-incremental release, Zenodo record `16740866`
 
-All pins are centralized in [`versions.env`](versions.env). The Dockerfile
-duplicates the cvc5 revision because Docker `ARG` defaults cannot import an env
-file; a contract test ensures the values stay equal.
+All revisions are centralized in [`versions.env`](versions.env). The
+Dockerfile repeats the cvc5 revision because Docker build arguments cannot
+import the environment file; a repository test keeps both pins equal.
 
-## Quick Start
-
-The local build needs Python 3.10+, CMake, Ninja, and either GCC 10+ or
-Clang 12+. On this cluster, `scripts/bootstrap.sh` loads `gcc/13.1.0` when the
-default compiler is too old.
-
-```bash
-make build
-make test
-make smoke
-make baseline-proxy
-```
-
-Generated binaries and source checkouts live under `.cache/`. Smoke baseline
-artifacts are written to `benchmark-results/smoke/`; proxy artifacts are
-written to `benchmark-results/smtlib-2025/`. Both result directories and the
-downloaded proxy corpus are intentionally ignored by Git.
-
-The final cloud selection has not been published, so these proxy measurements
-are engineering baselines rather than predictions of the competition score.
-
-## Repository Layout
-
-| Path | Purpose |
-|---|---|
-| `aws-build/` | Required competition Dockerfile and harness adapter |
-| `cvc5_cloud/runner.py` | Sequential, portfolio, and distributed launcher |
-| `configs/` | Local, distributed, and AWS job configurations |
-| `scripts/` | Build, infrastructure, benchmark, and measurement tooling |
-| `benchmarks/smoke/` | Checked-in harness-compatible correctness suite |
-| `tests/` | Runner, submission-contract, and remote-worker tests |
-| `docs/` | Architecture, measured baselines, and submission checklist |
-
-## AWS Harness
-
-The required submission files are:
-
-- [`aws-build/Dockerfile`](aws-build/Dockerfile)
-- [`aws-build/solver_cmd.py`](aws-build/solver_cmd.py)
-
-Fetch the exact harness revision:
-
-```bash
-source scripts/activate_infrastructure.sh
-satcomp.py configs/local.yml --build
-satcomp.py configs/local.yml \
-  --jobs-test-local configs/jobs-local.yml \
-  --results-dir test-results \
-  --test-local
-satcomp.py configs/local.yml --acceptance-test
-```
-
-The official infrastructure driver additionally requires Python 3.12+,
-Docker 25+, and Node.js 22+. The activation script exports
-`CVC5_CLOUD_ROOT`, which the YAML files use to resolve this repository
-independently of the harness checkout.
-
-Test the distributed path locally with two worker containers:
-
-```bash
-satcomp.py configs/cloud.yml --build
-satcomp.py configs/cloud.yml \
-  --jobs-test-local configs/jobs-local.yml \
-  --num-workers 2 \
-  --test-local cvc5-cloud
-```
-
-Docker is required for these harness tests. For an AWS run, replace the S3
-path in `configs/jobs-cloud.example.yml`, then follow the infrastructure
-project's provisioning, push, start, submit, collect, and teardown workflow.
-AWS resources incur charges.
-
-## Verification Status
-
-- The pinned static cvc5 competition build completes and reports commit
-  `6f2bc5606`.
-- All 19 automated tests pass, including a staged fake SCP/SSH worker.
-- Sequential, portfolio, and seeded-race modes each solve all 10 smoke cases.
-- The local and cloud YAML files pass the pinned infrastructure parser.
-- The harness adapter passes the pinned `SolverInput` and result-code types.
-- Docker acceptance, real multi-container execution, and AWS qualification
-  remain open because this host does not provide Docker or Python 3.12.
-
-## Competition Contract
-
-The launcher prints exactly `sat`, `unsat`, or `unknown` on stdout and returns
-exit code `10`, `20`, or `0`, respectively. Diagnostics go to stderr. Remote
-benchmarks are staged with `scp`; cvc5 processes are run through SSH and
-cleaned on every node after each job.
-
-The cloud track is separate from the main SMT-COMP tracks. Its published
-deadline is August 22, 2026, its recommended timeout is 200 seconds, and its
-submission uses the AWS harness above. Confirm portfolio/derived-solver
-eligibility and final hardware with the cloud organizers before submission;
-the public page does not yet spell out all recognition rules.
-
-See [`docs/architecture.md`](docs/architecture.md) for design details,
-[`docs/baselines.md`](docs/baselines.md) for measured results, and
-[`docs/submission-checklist.md`](docs/submission-checklist.md) for the
-remaining competition gates.
-
-[cloud-track]: https://smt-comp.github.io/2026/cloud_track/
+[anthropic-takehome]: https://github.com/anthropics/original_performance_takehome
+[cloud-track]: https://smt-comp.github.io/2026/parallel_track/#cloud-track
+[cvc5]: https://github.com/cvc5/cvc5

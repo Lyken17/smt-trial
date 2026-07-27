@@ -16,10 +16,8 @@ build/
 dist/
 *.egg-info/
 
-# Generated source checkouts, builds, benchmarks, and results
+# Generated source checkouts, builds, and harness results
 .cache/
-benchmark-results/
-benchmarks/smtlib-2025/
 test-results/
 
 # Local configuration and credentials

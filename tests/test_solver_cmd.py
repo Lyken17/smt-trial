@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import enum
 import importlib.util
-import os
 from pathlib import Path
 import sys
 import tempfile
@@ -46,21 +45,41 @@ class SolverCommandTest(unittest.TestCase):
             worker_node_ips=["10.0.0.2", "10.0.0.3"],
             solver_argument_list=[],
         )
-        with mock.patch.dict(os.environ, {"SOLVER_NAME": "cvc5-cloud"}):
+        config = {
+            "mode": "distributed",
+            "jobs_per_node": 4,
+            "local_replicas": 2,
+            "cvc5_args": ("--decision=internal",),
+        }
+        with (
+            mock.patch(
+                "cvc5_cloud.configuration.read_logic",
+                return_value="QF_UF",
+            ),
+            mock.patch("submission.get_config", return_value=config),
+        ):
             command = self.module.get_run_command(solver_input)
         self.assertIn("distributed", command)
         self.assertEqual(command.count("--host"), 2)
         self.assertIn("10.0.0.2", command)
+        self.assertIn("--jobs-per-node", command)
+        self.assertEqual(command[command.index("--jobs-per-node") + 1], "4")
+        self.assertIn("--local-replicas", command)
+        self.assertEqual(command[command.index("--local-replicas") + 1], "2")
+        self.assertIn("--cvc5-arg=--decision=internal", command)
         self.assertEqual(command[-1], "/tmp/formula.smt2")
 
-    def test_solver_name_selects_sequential_baseline(self) -> None:
+    def test_starter_submission_selects_sequential_mode(self) -> None:
         solver_input = types.SimpleNamespace(
             formula_file=Path("/tmp/formula.smt2"),
             timeout_seconds=10,
             worker_node_ips=[],
             solver_argument_list=[],
         )
-        with mock.patch.dict(os.environ, {"SOLVER_NAME": "cvc5-sequential"}):
+        with mock.patch(
+            "cvc5_cloud.configuration.read_logic",
+            return_value="QF_UF",
+        ):
             command = self.module.get_run_command(solver_input)
         mode_index = command.index("--mode")
         self.assertEqual(command[mode_index + 1], "sequential")
@@ -86,4 +105,3 @@ class SolverCommandTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

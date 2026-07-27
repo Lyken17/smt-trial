@@ -1,4 +1,4 @@
-project: cvc5-cloud-local
+project: cvc5-config-challenge-local
 profile: default
 region: us-east-1
 solver_type: smt
@@ -10,12 +10,7 @@ global_solver_options:
   disk_size: 32
 
 solvers:
-  - name: cvc5-sequential
-    author: cvc5-cloud
-    docker_dir: $CVC5_CLOUD_ROOT
-    dockerfile: aws-build/Dockerfile
-
-  - name: cvc5-portfolio
-    author: cvc5-cloud
+  - name: cvc5-submission
+    author: challenge entrant
     docker_dir: $CVC5_CLOUD_ROOT
     dockerfile: aws-build/Dockerfile

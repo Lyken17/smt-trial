@@ -1,42 +1,45 @@
-"""SMT-COMP 2026 AWS harness adapter for cvc5-cloud."""
+"""SMT-COMP AWS harness adapter for the configured cvc5 entry."""
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
+import sys
 from typing import List
 
 from common.solver_io import SolverInput, SolverResultCode
 
 
 CVC5 = "/opt/cvc5/bin/cvc5"
-RUNNER = "/opt/cvc5-cloud/cvc5_cloud/runner.py"
-DEFAULT_JOBS_PER_NODE = 8
+APP_ROOT = Path("/opt/cvc5-cloud")
+RUNNER = APP_ROOT / "cvc5_cloud/runner.py"
+if APP_ROOT.is_dir():
+    sys.path.insert(0, str(APP_ROOT))
 
+from cvc5_cloud.configuration import load_config
 
-def _default_mode(s_input: SolverInput) -> str:
-    solver_name = os.environ.get("SOLVER_NAME", "")
-    if s_input.worker_node_ips or solver_name.endswith("-cloud"):
-        return "distributed"
-    if solver_name.endswith("-sequential"):
-        return "sequential"
-    return "portfolio"
 
 
 def get_run_command(s_input: SolverInput) -> List[str]:
     """Map a harness input to the cloud launcher command."""
+    config = load_config(
+        Path(s_input.formula_file),
+        workers=len(s_input.worker_node_ips),
+    )
     command = [
         "/usr/bin/python3",
-        RUNNER,
+        str(RUNNER),
         "--cvc5",
         CVC5,
         "--mode",
-        _default_mode(s_input),
+        config.mode,
         "--timeout-seconds",
         str(s_input.timeout_seconds),
         "--jobs-per-node",
-        str(DEFAULT_JOBS_PER_NODE),
+        str(config.jobs_per_node),
+        "--local-replicas",
+        str(config.local_replicas),
     ]
+    command.extend(f"--cvc5-arg={argument}" for argument in config.cvc5_args)
     for host in s_input.worker_node_ips:
         command.extend(("--host", host))
     command.extend(s_input.solver_argument_list)
@@ -71,4 +74,3 @@ def get_cleanup_command() -> List[str]:
         "exit 0"
     )
     return ["bash", "-c", script]
-

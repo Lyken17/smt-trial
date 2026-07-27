@@ -32,6 +32,7 @@ RUN ./configure.sh competition \
 
 WORKDIR /
 COPY cvc5_cloud /opt/cvc5-cloud/cvc5_cloud
+COPY submission.py /opt/cvc5-cloud/submission.py
 COPY aws-build/solver_cmd.py /opt/amazon/scripting/harness/entrypoints/solver_cmd.py
 
 RUN chown -R ecs-user:ecs-user /opt/cvc5-cloud /opt/cvc5

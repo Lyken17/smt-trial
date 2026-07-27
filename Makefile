@@ -2,40 +2,50 @@ SHELL := /bin/bash
 
 CVC5 ?= .cache/cvc5-build/bin/cvc5
 PYTHON ?= .venv/bin/python
+SCORE_ARGS ?=
 
-.PHONY: setup build test smoke benchmarks baseline baseline-proxy check clean
+.PHONY: setup build rebuild test smoke score check clean distclean
 
 setup:
 	./scripts/bootstrap.sh --tools-only
 
 build:
+	@if [[ -x "$(CVC5)" ]]; then \
+		"$(CVC5)" --version | head -1; \
+	else \
+		./scripts/bootstrap.sh; \
+	fi
+
+rebuild:
 	./scripts/bootstrap.sh
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
 
-smoke: build
-	$(PYTHON) scripts/run_baselines.py \
+smoke:
+	$(PYTHON) tests/submission_tests.py \
 		--cvc5 $(CVC5) \
 		--benchmarks benchmarks/smoke \
-		--timeout 5 \
-		--output benchmark-results/smoke
+		--timeout 5
 
-benchmarks:
-	$(PYTHON) scripts/fetch_benchmarks.py
-
-baseline: smoke
-
-baseline-proxy: build benchmarks
-	$(PYTHON) scripts/run_baselines.py \
+score:
+	$(PYTHON) tests/submission_tests.py \
 		--cvc5 $(CVC5) \
 		--benchmarks benchmarks/smtlib-2025 \
 		--timeout 10 \
-		--output benchmark-results/smtlib-2025
+		$(SCORE_ARGS)
 
 check: test smoke
 
 clean:
-	@echo "Generated state is under .cache/, .venv/, benchmark-results/, and benchmarks/smtlib-2025/."
-	@echo "Remove those directories explicitly when a fresh build is required."
+	find . -maxdepth 1 -type d -name __pycache__ \
+		-exec find {} -depth -delete \;
+	find aws-build cvc5_cloud scripts tests -type d -name __pycache__ \
+		-prune -exec find {} -depth -delete \;
+	find . -maxdepth 1 -type d \
+		\( -name .pytest_cache -o -name test-results \) \
+		-exec find {} -depth -delete \;
 
+distclean: clean
+	find . -maxdepth 1 -type d \( -name .cache -o -name .venv \) \
+		-exec find {} -depth -delete \;

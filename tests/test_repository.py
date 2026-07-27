@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -55,7 +57,7 @@ class RepositoryContractTest(unittest.TestCase):
         expected = yaml.safe_load(
             (ROOT / "benchmarks/smoke/expected.yml").read_text()
         )
-        cases = []
+        expected_cases = {}
         for category, formulas in expected["smtlib"].items():
             for filename, details in formulas.items():
                 formula = (
@@ -63,18 +65,44 @@ class RepositoryContractTest(unittest.TestCase):
                 )
                 self.assertTrue(formula.is_file(), formula)
                 self.assertIn(details["expected_result"], ("SAT", "UNSAT"))
-                cases.append(formula)
-        self.assertEqual(len(cases), 10)
+                expected_cases[f"smtlib/{category}/{filename}"] = details[
+                    "expected_result"
+                ].lower()
+
+        manifest = json.loads(
+            (ROOT / "benchmarks/smoke/manifest.json").read_text()
+        )
+        manifest_cases = {
+            entry["path"]: entry["status"] for entry in manifest["benchmarks"]
+        }
+        self.assertEqual(manifest_cases, expected_cases)
+        self.assertEqual(len(manifest_cases), 10)
+
+    def test_training_suite_is_complete_and_unchanged(self) -> None:
+        benchmark_root = ROOT / "benchmarks/smtlib-2025"
+        manifest = json.loads((benchmark_root / "manifest.json").read_text())
+        entries = manifest["benchmarks"]
+        self.assertEqual(len(entries), 95)
+        for entry in entries:
+            formula = benchmark_root / entry["path"]
+            self.assertTrue(formula.is_file(), formula)
+            digest = hashlib.sha256(formula.read_bytes()).hexdigest()
+            self.assertEqual(digest, entry["sha256"], formula)
 
     def test_docker_builds_cli_target(self) -> None:
         dockerfile = (ROOT / "aws-build/Dockerfile").read_text()
         self.assertIn("--target cvc5-bin", dockerfile)
+        self.assertIn(
+            "COPY submission.py /opt/cvc5-cloud/submission.py",
+            dockerfile,
+        )
 
     def test_docker_context_excludes_generated_state(self) -> None:
         ignored = (ROOT / ".dockerignore").read_text().splitlines()
         self.assertIn(".cache", ignored)
         self.assertIn(".venv", ignored)
-        self.assertIn("benchmark-results", ignored)
+        self.assertIn("benchmarks", ignored)
+        self.assertIn("tests", ignored)
 
 
 if __name__ == "__main__":

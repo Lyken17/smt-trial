@@ -1,17 +1,23 @@
 # Submission Checklist
 
-## Proven Locally
+## Challenge Integrity
 
-- [x] `make test`
-- [x] `make smoke`
-- [x] cvc5 revision in `versions.env` matches `aws-build/Dockerfile`
-- [x] sequential, portfolio, and seeded-race outputs agree with expected
-      smoke results
-- [x] local and cloud YAML pass the pinned harness `ProjectConfig` parser
-- [x] `solver_cmd.py` passes the pinned harness I/O types
+- [ ] only `submission.py` contains challenge changes
+- [ ] `git diff origin/main -- tests/ benchmarks/ cvc5_cloud/ aws-build/` is empty
+- [ ] no benchmark-specific answers or expected-status lookup
+- [ ] no generated files or local credentials are committed
+- [ ] the cvc5 revision remains pinned
 
-## Official Harness
+## Local Verification
 
+- [ ] `make test`
+- [ ] `make smoke`
+- [ ] `make score`
+- [ ] report solved, wrong, unknown, wall-time, and PAR-2 results
+
+## Cloud Qualification
+
+- [ ] `source scripts/activate_infrastructure.sh`
 - [ ] `satcomp.py configs/local.yml --build`
 - [ ] `satcomp.py ... --test-local`
 - [ ] `satcomp.py configs/local.yml --acceptance-test`
@@ -21,21 +27,15 @@
 - [ ] SAT/UNSAT/UNKNOWN map to exit codes 10/20/0
 - [ ] timeout kills local and remote solver processes
 - [ ] second benchmark on the same containers starts cleanly
-
-## AWS Qualification
-
-- [ ] confirm the final instance type and worker count with organizers
 - [ ] run a low-cost 1-leader/2-worker AWS qualification
-- [ ] inspect S3 stdout, stderr, process status, and timing artifacts
-- [ ] run the intended 99-worker configuration on representative hard inputs
+- [ ] inspect stdout, stderr, process status, and timing artifacts
 - [ ] terminate instances and verify that billed resources are gone
 
-## Submission
+## External Competition
 
-- [ ] confirm that a same-solver seeded race/internal portfolio is eligible
+- [ ] identify a current competition with a compatible distributed track
+- [ ] read that competition's current rules and submission instructions
+- [ ] confirm portfolio or derived-solver eligibility
 - [ ] name and document the entry as a cvc5-derived solver if required
-- [ ] keep this repository and all fetched build sources public
 - [ ] add authors and affiliations to the system description
-- [ ] submit the repository containing top-level `aws-build/`
-- [ ] preliminary submission by August 8, 2026
-- [ ] final submission by August 22, 2026, 11:59 PM AoE
+- [ ] validate the exact commit submitted to the organizers

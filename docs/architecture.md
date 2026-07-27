@@ -1,10 +1,20 @@
 # Architecture
 
+## Configuration Boundary
+
+`submission.py` is the entrant-controlled file. Its `get_config(logic,
+workers)` function selects the launcher mode, jobs per node, local replicas,
+and extra cvc5 options. `cvc5_cloud/configuration.py` reads the formula logic
+and validates this dictionary before any solver process starts.
+
+The local scorer and the AWS harness both use this loader. A configuration
+therefore has the same meaning during development and cloud execution.
+
 ## Execution
 
-The AWS harness invokes `aws-build/solver_cmd.py` on the leader. The shim
-selects a baseline from `SOLVER_NAME`, passes the benchmark timeout and worker
-IP list to `cvc5_cloud/runner.py`, and parses the launcher's final stdout.
+The AWS harness invokes `aws-build/solver_cmd.py` on the leader. The adapter
+passes the validated submission, benchmark timeout, and worker addresses to
+`cvc5_cloud/runner.py`. In distributed mode, the runner:
 
 For distributed runs, the launcher:
 
@@ -19,33 +29,10 @@ Each cvc5 process receives an internal wall-clock limit shorter than the
 harness limit. Three seconds remain for orchestration and cleanup. The harness
 still provides the authoritative outer timeout.
 
-## Why This Baseline
+Sequential mode starts one unmodified cvc5 process. Portfolio mode starts one
+cvc5 internal portfolio. Distributed mode starts seeded internal portfolios on
+the leader and available workers; the first definitive result wins.
 
-The cvc5 `smtcomp2026` branch contains a built-in portfolio with strategies for
-linear and nonlinear arithmetic, quantified logics, bit-vectors, arrays, and
-strings. Reusing those strategies establishes a strong baseline with a small
-amount of noncritical orchestration code.
-
-Forking inside cvc5 also initially shares parsed assertions through
-copy-on-write memory. Eight jobs per 16-vCPU node matches the infrastructure
-guidance to prefer physical cores over hardware threads.
-
-The scaling limitation is deliberate: all nodes solve the complete formula.
-Seeds diversify SAT decisions and other randomized behavior, but deterministic
-theory-heavy problems may receive little benefit from additional nodes.
-
-## Next Experimental Baselines
-
-The next meaningful implementation should divide work instead of adding more
-seeds:
-
-- use cvc5 partition generation (`--compute-partitions`) to create cubes;
-- schedule cubes dynamically across workers;
-- stop globally after a SAT cube or after every cube is UNSAT;
-- add cube rebalancing when a worker finishes early;
-- compare partition generation overhead against the seeded race under the
-  200-second budget.
-
-That design has a larger correctness surface. In particular, an UNSAT answer
-is valid only after all exhaustive partitions return UNSAT.
-
+The launcher prints exactly `sat`, `unsat`, or `unknown` on stdout and returns
+exit code 10, 20, or 0. Diagnostics are isolated on stderr. Residual cvc5
+processes and staged formulas are cleaned after every harness job.

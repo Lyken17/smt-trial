@@ -1,4 +1,3 @@
-"""Distributed cvc5 baselines for SMT-COMP 2026."""
+"""cvc5 configuration challenge runner and cloud integration."""
 
-__version__ = "0.1.0"
-
+__version__ = "0.2.0"

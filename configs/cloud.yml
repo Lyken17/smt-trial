@@ -1,11 +1,11 @@
-project: cvc5-cloud-2026
+project: cvc5-config-challenge
 profile: default
 region: us-east-1
 solver_type: smt
 
 solvers:
-  - name: cvc5-cloud
-    author: cvc5-cloud
+  - name: cvc5-submission
+    author: challenge entrant
     docker_dir: $CVC5_CLOUD_ROOT
     dockerfile: aws-build/Dockerfile
     is_distributed: true
