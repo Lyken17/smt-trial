@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class DispatchTests(unittest.TestCase):
     def test_logic_and_division(self):
         with tempfile.TemporaryDirectory() as tmp:
-            benchmark = Path(tmp) / "x.smt2"
+            root = Path(tmp)
+            benchmark = root / "x.smt2"
             benchmark.write_text("; comment\n(set-logic QF_LIA)\n(check-sat)\n")
             self.assertEqual(benchmark_logic(benchmark), "QF_LIA")
             self.assertEqual(division_for("SingleQuery", "QF_LIA"), "QF_LinearIntArith")
@@ -21,9 +22,15 @@ class DispatchTests(unittest.TestCase):
 
     def test_incremental_protocol_is_harness_owned(self):
         with tempfile.TemporaryDirectory() as tmp:
-            benchmark = Path(tmp) / "x.smt2"
+            root = Path(tmp)
+            benchmark = root / "x.smt2"
             benchmark.write_text("(set-logic QF_LIA)\n(check-sat)\n")
-            args = solver_args(ROOT / "configs/cvc5/incremental.toml", "Incremental", benchmark)
+            config = root / "incremental.toml"
+            config.write_text(
+                '[meta]\nname="test-inc"\ntrack="Incremental"\njobs=1\ncores=4\n'
+                'memory_mib=30720\nwall_limit_s=1200\n[default]\nargs=[]\n'
+            )
+            args = solver_args(config, "Incremental", benchmark)
             self.assertIn("--incremental", args)
             self.assertIn("--print-success", args)
             self.assertNotIn("--no-incremental", args)

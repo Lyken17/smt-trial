@@ -8,11 +8,11 @@
 
 | Track | 当前状态 | 参数配置 | 官方选择目录 | 结果目录 | 合法 performance |
 |---|---|---|---|---|---|
-| SingleQuery | **已支持** | `configs/cvc5/single-query.toml` | `files` | `results_singlequery` | `24`, `par`, `seq`, `sat`, `unsat` |
-| Incremental | 预留，未验收 | `configs/cvc5/incremental.toml` | `files_inc` | `results_inc` | `par` |
-| UnsatCore | 预留，未验收 | `configs/cvc5/unsat-core.toml` | `files_unsatcore` | `results_unsatcore` | `par`, `seq` |
-| ModelValidation | 预留，未验收 | `configs/cvc5/model-validation.toml` | `files_model` | `results_model` | `par`, `seq` |
-| Parallel | 预留，未验收 | `configs/cvc5/parallel.toml` | `files_parallel` | `results_parallel` | `par` |
+| SingleQuery | **已支持** | `configs/cvc5/SingleQuery/<performance>.toml` | `files` | `results_singlequery` | `24`, `par`, `seq`, `sat`, `unsat` |
+| Incremental | 预留，未验收 | 尚无可用配置 | `files_inc` | `results_inc` | `par` |
+| UnsatCore | 预留，未验收 | 尚无可用配置 | `files_unsatcore` | `results_unsatcore` | `par`, `seq` |
+| ModelValidation | 预留，未验收 | 尚无可用配置 | `files_model` | `results_model` | `par`, `seq` |
+| Parallel | 预留，未验收 | 尚无可用配置 | `files_parallel` | `results_parallel` | `par` |
 
 下面是预留的通用接口；当前正式使用时 `TRACK` 必须是 `SingleQuery`：
 
@@ -108,11 +108,23 @@ EXTERNAL_CACHE_ROOT=/data/smtcomp-cache SELECTION_JOBS=8 \
 
 ## 调参入口与边界
 
-Single Query 参数入口是：
+调参配置使用 `Track / Performance` 层级，Division 位于文件内部：
 
 ```text
-configs/cvc5/single-query.toml
+configs/cvc5/
+  SingleQuery/
+    par.toml
+    seq.toml
+    24.toml
+    sat.toml
+    unsat.toml
 ```
+
+当前生成并验收了 SingleQuery 的 5 个 performance 配置；每个文件都包含全部 19 个
+Division，所以既能运行其中一个 Division，也能运行整个 Track。其他 Track 将来接通后
+放在同级目录，例如 `configs/cvc5/UnsatCore/`。初始化缺失文件可执行
+`make init-configs TRACK=SingleQuery`；已有调参配置不会被覆盖。实现入口是
+`scripts/init_track_configs.py`。
 
 参数合并顺序为 `default → division → division.logic`：
 
@@ -130,7 +142,7 @@ args = ["--another-option"]
 查询最终参数：
 
 ```bash
-.venv/bin/smtcomp-cvc5-config configs/cvc5/single-query.toml \
+.venv/bin/smtcomp-cvc5-config configs/cvc5/SingleQuery/24.toml \
   --track SingleQuery --division QF_LinearIntArith --logic QF_LIA
 ```
 
@@ -151,12 +163,21 @@ expected status、结果解析和评分公式。
 
 ```bash
 make run TRACK=SingleQuery DIVISION=QF_LinearIntArith \
-  CONFIG=configs/cvc5/single-query.toml \
+  PERFORMANCE=24 \
   CVC5=.cache/solver/default/bin/cvc5 \
   RUN_ID=lia-v1
 ```
 
-省略 `DIVISION=...` 会运行整个 Single Query Track。`make prepare` 只生成 BenchExec
+省略 `CONFIG` 时，上述命令自动选择 `configs/cvc5/SingleQuery/24.toml`。
+`PERFORMANCE=par` 会改选同目录的 `par.toml`。默认 `RUN_ID` 和 XML 文件名也包含
+`Track/Division/Performance`，避免不同实验互相覆盖；仍可显式指定 `RUN_ID`。
+
+Performance 只在启动运行前选择一套完整候选配置，并在之后选择评分视图；不会传给
+cvc5，也不能根据单个 benchmark 的答案切换配置。每套配置必须重新运行整个 Division，
+不同配置的最佳分数不能拼成同一份官方 submission。
+
+省略 `DIVISION=...` 会使用同一 performance 文件中的全部 19 个 Division，运行整个
+Single Query Track。`make prepare` 只生成 BenchExec
 XML；`make run` 会先生成 XML、由 BenchExec 执行，再用官方
 `convert-benchexec-results` 生成评分输入。
 

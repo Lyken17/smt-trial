@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from smtcomp_harness.config import args_for, load
+from smtcomp_harness.config import args_for, load, validate_performance_request
 from smtcomp import defs
 
 
@@ -11,18 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ConfigTests(unittest.TestCase):
     def test_checked_in_configs(self):
-        files = {
-            "SingleQuery": "single-query.toml",
-            "Incremental": "incremental.toml",
-            "UnsatCore": "unsat-core.toml",
-            "ModelValidation": "model-validation.toml",
-            "Parallel": "parallel.toml",
-        }
-        for track_name, filename in files.items():
-            data = load(ROOT / "configs/cvc5" / filename, track_name)
+        for performance in ("24", "par", "seq", "sat", "unsat"):
+            data = load(ROOT / "configs/cvc5/SingleQuery" / f"{performance}.toml", "SingleQuery")
+            self.assertEqual(data["meta"]["performance"], performance)
             self.assertEqual(
                 set(data.get("division", {})),
-                {division.name for division in defs.tracks[defs.Track(track_name)]},
+                {division.name for division in defs.tracks[defs.Track.SingleQuery]},
             )
 
     def test_resource_limit_cannot_be_changed(self):
@@ -36,7 +30,7 @@ class ConfigTests(unittest.TestCase):
                 load(path)
 
     def test_layering(self):
-        data = load(ROOT / "configs/cvc5/single-query.toml")
+        data = load(ROOT / "configs/cvc5/SingleQuery/24.toml")
         self.assertEqual(
             args_for(data, "QF_LinearIntArith", "QF_LIA"),
             ["--quiet", "--fp-exp", "--use-portfolio"],
@@ -63,6 +57,22 @@ class ConfigTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "harness-owned"):
                 load(path)
+
+    def test_single_query_performance_configs(self):
+        root = ROOT / "configs/cvc5/SingleQuery"
+        paths = sorted(root.glob("*.toml"))
+        self.assertEqual(len(paths), 5)
+        for path in paths:
+            data = load(path, "SingleQuery")
+            performance = path.stem
+            self.assertEqual(data["meta"]["performance"], performance)
+            validate_performance_request(data, performance)
+
+    def test_performance_coordinate_mismatch_is_rejected(self):
+        path = ROOT / "configs/cvc5/SingleQuery/24.toml"
+        data = load(path, "SingleQuery")
+        with self.assertRaisesRegex(ValueError, "performance 24"):
+            validate_performance_request(data, "par")
 
 
 if __name__ == "__main__":

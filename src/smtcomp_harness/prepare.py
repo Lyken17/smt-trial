@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 from smtcomp import defs
 
-from .config import load
+from .config import load, validate_performance_request
 
 
 def prepare(
@@ -17,6 +17,7 @@ def prepare(
     output: Path,
     division: str | None = None,
     trace_executor: Path | None = None,
+    performance: str | None = None,
 ) -> None:
     config_path = config_path.resolve()
     cvc5 = cvc5.resolve()
@@ -29,6 +30,7 @@ def prepare(
     if not selection.is_dir() or not any(selection.glob(f"*/{pattern}")):
         raise ValueError(f"selected benchmark files are missing: {selection}")
     config = load(config_path, config_track)
+    validate_performance_request(config, performance)
     meta = config["meta"]
     if track == "Incremental":
         if trace_executor is None or not trace_executor.is_file() or not trace_executor.stat().st_mode & 0o111:
@@ -93,6 +95,7 @@ def main() -> None:
     parser.add_argument("--selection", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--division")
+    parser.add_argument("--performance", choices=("par", "seq", "sat", "unsat", "24"))
     parser.add_argument("--trace-executor", type=Path)
     args = parser.parse_args()
     prepare(
@@ -103,6 +106,7 @@ def main() -> None:
         args.output,
         args.division,
         args.trace_executor,
+        args.performance,
     )
     print(args.output)
 

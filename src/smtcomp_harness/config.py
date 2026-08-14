@@ -32,6 +32,14 @@ EXPECTED = {
     "Parallel": {"cores": 128, "memory_mib": 1000 * 1024, "wall_limit_s": 1200},
 }
 
+ALLOWED_PERFORMANCES = {
+    "SingleQuery": {"par", "seq", "sat", "unsat", "24"},
+    "Incremental": {"par"},
+    "UnsatCore": {"par", "seq"},
+    "ModelValidation": {"par", "seq"},
+    "Parallel": {"par"},
+}
+
 
 def load(path: Path, track: str | None = None) -> dict[str, Any]:
     with path.open("rb") as handle:
@@ -59,6 +67,14 @@ def _validate_tree(data: dict[str, Any], track_name: str) -> None:
         raise ValueError(f"unsupported top-level keys: {sorted(extra)}")
     track = defs.Track(track_name)
     official_divisions = defs.tracks[track]
+    performance = data["meta"].get("performance")
+    if performance is not None:
+        if performance not in ALLOWED_PERFORMANCES[track_name]:
+            raise ValueError(f"performance {performance} is not valid for Track {track_name}")
+        configured_divisions = set(data.get("division", {}))
+        expected_divisions = {division.name for division in official_divisions}
+        if configured_divisions != expected_divisions:
+            raise ValueError("a Track/Performance config must contain every official Division")
     for division_name, division_section in data.get("division", {}).items():
         if division_name not in defs.Division.__members__:
             raise ValueError(f"unknown Division in {track_name}: {division_name}")
@@ -98,6 +114,16 @@ def args_for(data: dict[str, Any], division: str, logic: str) -> list[str]:
     result.extend(section.get("args", []))
     result.extend(section.get("logic", {}).get(logic, {}).get("args", []))
     return result
+
+
+def validate_performance_request(data: dict[str, Any], performance: str | None) -> None:
+    expected_performance = data["meta"].get("performance")
+    if expected_performance is None:
+        return
+    if performance != expected_performance:
+        raise ValueError(
+            f"config is for performance {expected_performance}, requested {performance}"
+        )
 
 
 def main() -> None:

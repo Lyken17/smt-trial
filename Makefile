@@ -3,7 +3,6 @@ PYTHON ?= .venv/bin/python
 SMTCOMP ?= .venv/bin/smtcomp
 TRACK ?= SingleQuery
 DIVISION ?=
-RUN_ID ?= current
 SETUP_CONFIG ?= configs/setup-single-query.env
 DOWNLOAD_JOBS ?= 1
 DOWNLOAD_SEGMENTS ?= 8
@@ -16,12 +15,8 @@ TRACK_KIND_ModelValidation := par
 TRACK_KIND_Parallel := par
 PERFORMANCE ?= $(TRACK_KIND_$(TRACK))
 KIND ?= $(PERFORMANCE)
+RUN_ID ?= $(TRACK)$(if $(strip $(DIVISION)),-$(DIVISION),)-$(PERFORMANCE)
 
-TRACK_CONFIG_SingleQuery := configs/cvc5/single-query.toml
-TRACK_CONFIG_Incremental := configs/cvc5/incremental.toml
-TRACK_CONFIG_UnsatCore := configs/cvc5/unsat-core.toml
-TRACK_CONFIG_ModelValidation := configs/cvc5/model-validation.toml
-TRACK_CONFIG_Parallel := configs/cvc5/parallel.toml
 TRACK_SELECTION_SingleQuery := .cache/execution/benchmarks/files
 TRACK_SELECTION_Incremental := .cache/execution/benchmarks/files_inc
 TRACK_SELECTION_UnsatCore := .cache/execution/benchmarks/files_unsatcore
@@ -38,11 +33,11 @@ TRACK_CVC5_UnsatCore := .cache/solver/default/bin/cvc5
 TRACK_CVC5_ModelValidation := .cache/solver/default/bin/cvc5
 TRACK_CVC5_Parallel := .cache/solver/default/bin/cvc5
 
-CONFIG ?= $(TRACK_CONFIG_$(TRACK))
+CONFIG ?= configs/cvc5/$(TRACK)/$(PERFORMANCE).toml
 SELECTION ?= $(TRACK_SELECTION_$(TRACK))
 RESULTS ?= $(TRACK_RESULTS_$(TRACK))
 CVC5 ?= $(TRACK_CVC5_$(TRACK))
-XML ?= work/cvc5-$(TRACK).xml
+XML ?= work/cvc5-$(TRACK)$(if $(strip $(DIVISION)),-$(DIVISION)-$(PERFORMANCE),).xml
 TRACE_EXECUTOR ?= .cache/execution/smtlib2_trace_executor
 UC_VALIDATION_MODE ?= external
 DIVISION_ARG := $(if $(strip $(DIVISION)),--division $(DIVISION),)
@@ -55,7 +50,7 @@ UC_VALIDATOR_MANIFEST := work/unsat-core-validator-pool.json
 	prepare run validate-model validate-unsat-core generate-unsat-core-validation \
 	manifest-unsat-core-validator-pool build-unsat-core-validator-pool \
 	run-unsat-core-validator-pool run-unsat-core-validator \
-	merge-unsat-core-validation score score-overall score-matrix score-24 score-parallel clean
+	merge-unsat-core-validation init-configs score score-overall score-matrix score-24 score-parallel clean
 
 system-deps:
 	bash scripts/install_system_deps.sh $(SETUP_CONFIG)
@@ -65,6 +60,9 @@ storage-single-query:
 
 setup:
 	bash scripts/bootstrap.sh
+
+init-configs:
+	$(PYTHON) scripts/init_track_configs.py --track $(TRACK)
 
 # Sequential on purpose: each stage consumes the artefacts produced by the previous one.
 setup-single-query:
@@ -136,6 +134,7 @@ prepare:
 	$(PYTHON) -m smtcomp_harness.prepare \
 		--track $(TRACK) --config $(CONFIG) --cvc5 $(CVC5) \
 		--selection $(SELECTION) --output $(XML) $(DIVISION_ARG) \
+		--performance $(PERFORMANCE) \
 		$(if $(filter Incremental,$(TRACK)),--trace-executor $(TRACE_EXECUTOR),)
 
 run: prepare
@@ -176,7 +175,7 @@ generate-unsat-core-validation:
 	$(SMTCOMP) generate-unsatcore-validation-files \
 		.cache/execution .cache/scrambler/scrambler "$(RESULTS)"
 	$(PYTHON) -m smtcomp_harness.prepare \
-		--track UnsatCoreValidation --config configs/cvc5/single-query.toml \
+		--track UnsatCoreValidation --config configs/cvc5/SingleQuery/par.toml \
 		--cvc5 .cache/solver/default/bin/cvc5 \
 		--selection .cache/execution/benchmarks/files_unsatcorevalidation \
 		--output work/cvc5-UnsatCoreValidation.xml $(DIVISION_ARG)

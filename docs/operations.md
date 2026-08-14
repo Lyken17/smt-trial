@@ -65,11 +65,12 @@ https://learn.microsoft.com/windows/wsl/wsl-config#wslconfig 。
 
 ## 调参、运行、评分
 
-只修改 `configs/cvc5/single-query.toml` 中目标 Division/Logic 的 `args`。例如：
+按 Performance 分开的配置位于 `configs/cvc5/SingleQuery/<Performance>.toml`；每个
+文件内部包含全部 Division。例如：
 
 ```bash
 make run TRACK=SingleQuery DIVISION=QF_LinearIntArith \
-  CONFIG=configs/cvc5/single-query.toml \
+  PERFORMANCE=24 \
   CVC5=.cache/solver/default/bin/cvc5 RUN_ID=lia-v1
 
 make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
@@ -78,6 +79,13 @@ make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
 make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
   PERFORMANCE=par RUN_ID=lia-v1
 ```
+
+没有显式 `CONFIG` 时，第一条命令按 Track/Performance 自动选择
+`configs/cvc5/SingleQuery/24.toml`。有 `DIVISION` 时只运行该文件中的相应 Division；
+省略 `DIVISION` 时运行整个 SingleQuery Track。运行前会校验文件中的 Performance；
+它只选择候选配置，不会传入 cvc5。不能跨配置拼分。规则来源：
+https://smt-comp.github.io/2025/rules.pdf ；官方 submission 定义：
+https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/submissions/cvc5.json 。
 
 Single Query 的合法 performance 是 `24`、`par`、`seq`、`sat`、`unsat`。
 `24` 只筛选 `walltime_s <= 24`，正式运行仍使用 PDF 规定的 1200 秒、4 cores、

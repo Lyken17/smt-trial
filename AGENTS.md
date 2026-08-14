@@ -29,13 +29,20 @@ Official references:
 
 For a Single Query tuning experiment, solver options may be changed only in:
 
-- `configs/cvc5/single-query.toml`
+- `configs/cvc5/SingleQuery/<Performance>.toml`
 
 Options may depend on Track, Division, and SMT-LIB Logic. They must not depend
 on benchmark name, path, checksum, expected status, execution order, previous
 answer, or observed result metadata. Harness code, documentation, dependency
 configuration, and tests may be changed only to maintain or audit the harness,
 not to manufacture a better score.
+
+Each Track/Performance file contains all official Divisions. The Performance
+filename selects an independent candidate before a run;
+it must never be exposed to the solver or used to dispatch individual
+benchmarks. Every experiment must rerun its complete Division. Scores from
+different experiment configurations must not be combined into one claimed
+submission result.
 
 Wrong SAT/UNSAT answers are official scoring errors and must never be hidden or
 filtered. The `24` performance is the official `walltime_s <= 24` scoring view;
