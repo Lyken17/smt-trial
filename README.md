@@ -168,9 +168,10 @@ XML；`make run` 会先生成 XML、由 BenchExec 执行，再用官方
 
 ## 分 Division 评分
 
-正式评分坐标是 `(SingleQuery, Division, performance)`。竞赛按 Division 排名，不把
-所有 Division 的分数相加产生一个官方总冠军。本仓库输出的 diagnostic sum 明确标为
-非官方，仅用于调参观察。
+正式 Division 排名坐标是 `(SingleQuery, Division, performance)`。此外，官方还有
+Rules PDF §7.3.1 定义的 Best Overall recognition：先在每个 Division 计算归一化正确率，
+再按 `log10(N_D)` 加权汇总；它不是把正确题数直接相加。本仓库输出的 diagnostic sum
+仍明确标为非官方，只用于调参观察。
 
 ```bash
 make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
@@ -178,7 +179,15 @@ make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
 
 make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
   PERFORMANCE=par RUN_ID=lia-v1
+
+make score-overall TRACK=SingleQuery \
+  RESULTS=.cache/official/data/results-sq-2025.json.gz
 ```
+
+`make score-overall` 直接调用固定官方 `generate_website_page.py` 的
+`normalized_correctness_score`，一次输出 cvc5 的 `par`、`seq`、`sat`、`unsat` 和 `24`
+五项官方 Best Overall 分数与排名。官方页面：
+https://smt-comp.github.io/2025/results/best-overall-single-query/ 。
 
 Single Query 支持五个官方视图：
 

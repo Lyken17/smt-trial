@@ -55,7 +55,7 @@ UC_VALIDATOR_MANIFEST := work/unsat-core-validator-pool.json
 	prepare run validate-model validate-unsat-core generate-unsat-core-validation \
 	manifest-unsat-core-validator-pool build-unsat-core-validator-pool \
 	run-unsat-core-validator-pool run-unsat-core-validator \
-	merge-unsat-core-validation score score-matrix score-24 score-parallel clean
+	merge-unsat-core-validation score score-overall score-matrix score-24 score-parallel clean
 
 system-deps:
 	bash scripts/install_system_deps.sh $(SETUP_CONFIG)
@@ -212,6 +212,10 @@ score:
 	@test -n "$(KIND)" || { echo "PERFORMANCE (or KIND) is required" >&2; exit 2; }
 	$(PYTHON) -m smtcomp_harness.score --data .cache/official/data \
 		--track $(TRACK) --kind $(KIND) $(DIVISION_ARG) $(RESULTS)
+
+score-overall:
+	$(PYTHON) -m smtcomp_harness.score --data .cache/official/data \
+		--track $(TRACK) --overall --solver cvc5 $(RESULTS)
 
 score-matrix:
 	$(PYTHON) -m smtcomp_harness.matrix

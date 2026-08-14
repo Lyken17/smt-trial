@@ -17,6 +17,8 @@ ALLOWED_KINDS = {
     "Parallel": {"par"},
 }
 
+KIND_LABELS = {"par": "par", "seq": "seq", "sat": "sat", "unsat": "unsat", "twentyfour": "24"}
+
 
 def validate_score_coordinates(track_name: str, kind_name: str, division_name: str | None):
     from smtcomp import defs
@@ -134,15 +136,77 @@ def score(data: Path, track_name: str, kind_name: str, sources: list[Path], divi
     return detailed, total
 
 
+def overall_scores(data: Path, track_name: str, sources: list[Path]) -> pl.DataFrame:
+    """Compute the official 2025 Best Overall recognition table."""
+    from smtcomp import defs, results as official_results, scoring as official_scoring
+    from smtcomp.generate_website_page import normalized_correctness_score, sq_generate_datas
+
+    if track_name != "SingleQuery":
+        raise ValueError("Best Overall is currently wired and tested only for SingleQuery")
+    track = defs.Track(track_name)
+    config = defs.Config(data)
+    rows: list[dict[str, object]] = []
+    with ExitStack() as stack:
+        _require_track_validation(track_name, sources)
+        normalized = _result_sources(data, sources, stack)
+        frame = official_results.helper_get_results(config, normalized, track)
+        official_scoring.sanity_check(config, frame)
+        scores = official_scoring.add_disagreements_info(frame, track)
+        scores = official_scoring.benchmark_scoring(scores, track)
+        scores = scores.filter(disagreements=False).drop("disagreements")
+        scores = scores.filter(track=int(track)).drop("track").collect().lazy()
+        divisions = sq_generate_datas(config, scores, True, track)
+
+        for kind in official_scoring.Kind:
+            totals: dict[str, dict[str, float | int]] = {}
+            for entry in normalized_correctness_score(divisions, scores, track, kind):
+                total = totals.setdefault(entry.name, {"score": 0.0, "tie_time": 0.0, "divisions": 0})
+                total["score"] = float(total["score"]) + entry.contribution
+                total["tie_time"] = float(total["tie_time"]) + entry.tieBreakTimeScore
+                total["divisions"] = int(total["divisions"]) + 1
+            ordered = sorted(totals.items(), key=lambda item: (-float(item[1]["score"]), float(item[1]["tie_time"])))
+            for rank, (solver, total) in enumerate(ordered, start=1):
+                rows.append(
+                    {
+                        "performance": KIND_LABELS[kind.name],
+                        "rank": rank,
+                        "solver": solver,
+                        "overall_score": total["score"],
+                        "tie_break_time": total["tie_time"],
+                        "divisions": total["divisions"],
+                    }
+                )
+    return pl.DataFrame(rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Official SMT-COMP division scorer plus a non-official diagnostic sum")
     parser.add_argument("results", nargs="+", type=Path)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--track", required=True)
-    parser.add_argument("--kind", "--performance", dest="kind", choices=("par", "seq", "sat", "unsat", "24"), required=True)
-    parser.add_argument("--division", required=True)
+    parser.add_argument("--kind", "--performance", dest="kind", choices=("par", "seq", "sat", "unsat", "24"))
+    parser.add_argument("--division")
+    parser.add_argument("--overall", action="store_true", help="official 2025 Best Overall recognition")
+    parser.add_argument("--solver", help="filter output to one solver, for example cvc5")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    if args.overall:
+        try:
+            table = overall_scores(args.data, args.track, args.results)
+        except ValueError as error:
+            parser.error(str(error))
+        if args.kind:
+            table = table.filter(pl.col("performance") == args.kind)
+        if args.solver:
+            table = table.filter(pl.col("solver") == args.solver)
+        if args.json:
+            print(json.dumps({"best_overall": table.to_dicts()}, indent=2))
+        else:
+            print("Official SMT-COMP 2025 Best Overall ranking")
+            print(table)
+        return
+    if args.kind is None:
+        parser.error("--kind/--performance is required unless --overall is used")
     try:
         validate_score_coordinates(args.track, args.kind, args.division)
     except ValueError as error:

@@ -67,8 +67,10 @@ Track/kind 组合。
 - Biggest Lead：比较各 Division 第一名相对第二名的领先幅度；
 - Largest Contribution：比较移除该 solver 后 virtual best solver 的损失。
 
-当前包装器计算的是官方 Division score。`NON-OFFICIAL all-division diagnostic sum` 只是调参辅助值，
-不是上述三种官方 recognition。
+`make score` 计算官方 Division score。`make score-overall` 直接复用固定官方
+`generate_website_page.py` 的归一化实现，计算 Rules PDF §7.3.1 的 Best Overall。
+`NON-OFFICIAL all-division diagnostic sum` 仍只是正确题数/时间的调参辅助值，不是上述
+任何官方 recognition。
 
 ## 单 Division 和诊断值
 
@@ -82,6 +84,17 @@ Track/kind 组合。
 行，不能作为跨 Division 官方奖项。运行 `make score-matrix` 可得到全部 195 个
 合法 `(Track, Division, Performance)` 三元组。
 
+Single Query 全量 Best Overall：
+
+```bash
+make score-overall TRACK=SingleQuery \
+  RESULTS=.cache/official/data/results-sq-2025.json.gz
+```
+
+该入口不需要 `DIVISION` 或 `PERFORMANCE`，一次计算五种 performance；默认只显示
+`cvc5`。官方结果页面：
+https://smt-comp.github.io/2025/results/best-overall-single-query/ 。
+
 对本地 BenchExec 结果，包装器会拒绝尚含
 `ModelNotValidated` 的 ModelValidation 结果，也会拒绝没有
 `validation_attempted` 证据的 UnsatCore 结果。官方 organizer JSON(.gz)
@@ -92,5 +105,6 @@ Track/kind 组合。
 - https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
 - https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/results.py
 - https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/main.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/generate_website_page.py
 - https://smt-comp.github.io/2025/rules.pdf
 - https://smt-comp.github.io/2025/results/
