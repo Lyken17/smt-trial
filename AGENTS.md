@@ -1,38 +1,74 @@
-# Challenge Agent Instructions
+# SMT-COMP 2025 cvc5 tuning repository rules
 
-These instructions apply when working on a challenge submission. Repository
-maintainers may edit infrastructure while developing the challenge itself.
+## Supported scope
 
-## Objective
+The only currently supported and end-to-end tested competition track is
+`SingleQuery`. Incremental, UnsatCore, ModelValidation, and Parallel files are
+reserved scaffolding and must not be reported as reproduced 2025 results until
+their data, validation, execution, and scoring paths have been separately
+completed and tested.
 
-Maximize the number of correct SMT results reported by `make score`. The
-starter score is 73/95. Wrong `sat` or `unsat` answers are invalid; prefer
-`unknown` when cvc5 cannot decide a case safely.
+## Immutable official inputs
 
-## Allowed Edit
+Do not change the pinned SMT-COMP tool, benchmark metadata, historical results,
+raw benchmark archives, selected benchmark membership, selection seed,
+scramble IDs, expected statuses, Track/Division/Logic mapping, execution limits,
+result parser, or score computation in order to improve a tuning result.
 
-Edit `submission.py` only. Use its `logic` and `workers` inputs to select valid
-cvc5 modes, job counts, replicas, and command-line options.
+Official references:
 
-Do not modify:
+- https://smt-comp.github.io/2025/rules.pdf
+- https://github.com/SMT-COMP/smt-comp.github.io/tree/smtcomp25
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/selection.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scramble_benchmarks.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
+- https://doi.org/10.5281/zenodo.16740866
 
-- `tests/` or `tests/submission_tests.py`;
-- `benchmarks/`, manifests, expected statuses, or checksums;
-- `cvc5_cloud/`, `aws-build/`, `configs/`, or timeout handling;
-- repository integrity checks or result parsing.
+## Tuning boundary
 
-Do not hardcode answers, benchmark identities, checksums, or evaluation order.
-Do not infer answers from expected-status metadata.
+For a Single Query tuning experiment, solver options may be changed only in:
 
-## Workflow
+- `configs/cvc5/single-query.toml`
 
-1. Read `submission.py` and cvc5's option help.
-2. Form a solver-configuration hypothesis.
-3. Run a targeted logic with
-   `make score SCORE_ARGS="--logic LOGIC"`.
-4. Run `make smoke` after every configuration family change.
-5. Run the complete `make score` before reporting an improvement.
-6. Report solved, wrong, unknown, wall time, and PAR-2.
+Options may depend on Track, Division, and SMT-LIB Logic. They must not depend
+on benchmark name, path, checksum, expected status, execution order, previous
+answer, or observed result metadata. Harness code, documentation, dependency
+configuration, and tests may be changed only to maintain or audit the harness,
+not to manufacture a better score.
 
-Agent-assisted search, web research, and automated experiments are allowed.
-Keep experimental logs and generated files out of Git.
+Wrong SAT/UNSAT answers are official scoring errors and must never be hidden or
+filtered. The `24` performance is the official `walltime_s <= 24` scoring view;
+it is not a 24-second execution limit. Formal Single Query execution uses the
+official 1200-second wall limit, 4 cores, 4800 CPU seconds, and 30 GiB memory.
+
+## Required workflow and reporting
+
+Build with `make setup-single-query`. The resumable selection wrapper must call
+the pinned official selection and scrambling functions and may skip a task only
+when both its generated yml and scrambled SMT2 already exist. A complete
+selection has 129,361 yml files and 129,361 scrambled SMT2 files; never round an
+incomplete cache up to the official total.
+
+Run and score one Division explicitly, for example:
+
+```bash
+make run TRACK=SingleQuery DIVISION=QF_LinearIntArith RUN_ID=<run-id>
+make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
+  PERFORMANCE=24 RUN_ID=<run-id>
+```
+
+Every reported tuning result must include Track, Division, performance kind,
+cvc5 configuration/options, cvc5 revision, host CPU/RAM, official-tool revision,
+and whether the full official selection passed the documented integrity checks.
+Competition rankings are per Division and performance; any cross-Division sum
+must be labeled non-official diagnostic output.
+
+## Portability
+
+Do not commit usernames, passwords, home-directory paths, drive letters,
+machine names, regional package mirrors, fixed distribution codenames, fixed
+CPU architectures, or generated cache symlinks. Host-dependent storage and
+parallelism must use `configs/setup-single-query.env`, environment overrides,
+or automatic capability detection. Runtime files below `.cache`, `work`, and
+`results` are local artifacts and must remain untracked.

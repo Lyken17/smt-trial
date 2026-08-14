@@ -1,18 +1,23 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cvc5-cloud"
-version = "0.2.0"
-description = "A cvc5 configuration challenge for distributed SMT solving"
-requires-python = ">=3.10"
-license = {file = "LICENSE"}
-authors = [{name = "cvc5-cloud contributors"}]
-dependencies = []
+name = "smtcomp-2025-cvc5-harness"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.7",
+  "polars>=1.0",
+  "rich>=13.7",
+  "typer>=0.12",
+]
 
 [project.scripts]
-cvc5-cloud = "cvc5_cloud.runner:main"
+smtcomp-cvc5-config = "smtcomp_harness.config:main"
+smtcomp-cvc5-dispatch = "smtcomp_harness.dispatch:main"
+smtcomp-prepare-run = "smtcomp_harness.prepare:main"
+smtcomp-score = "smtcomp_harness.score:main"
 
 [tool.setuptools.packages.find]
-include = ["cvc5_cloud*"]
+where = ["src"]

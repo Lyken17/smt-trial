@@ -1,4 +1,7 @@
-# Python bytecode and tool caches
+.cache/
+.venv/
+venv/
+ENV/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -7,31 +10,21 @@ __pycache__/
 .coverage
 .coverage.*
 htmlcov/
-
-# Python environments and packaging output
-.venv/
-venv/
-ENV/
+*.egg-info/
 build/
 dist/
-*.egg-info/
-
-# Generated source checkouts, builds, and harness results
-.cache/
+results/
+work/
 test-results/
 
-# Local configuration and credentials
+# Local configuration, credentials, editors, and operating-system files.
 .env
 .env.*
 !.env.example
-
-# Logs and temporary files
 *.log
 *.tmp
 *.swp
 *~
-
-# Editors and operating systems
 .idea/
 .vscode/
 .DS_Store

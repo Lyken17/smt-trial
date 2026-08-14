@@ -1,7 +1,0 @@
-(set-logic QF_LIA)
-(set-info :status unsat)
-(declare-const x Int)
-(assert (>= x 5))
-(assert (<= x 4))
-(check-sat)
-(exit)

@@ -1,7 +1,0 @@
-results_dir: $CVC5_CLOUD_ROOT/test-results/aws
-formulas:
-  - s3://REPLACE_WITH_BUCKET/benchmarks
-
-job_options:
-  timeout_secs: 200
-  solver_options: []
