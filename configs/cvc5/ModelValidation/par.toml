@@ -1,10 +1,10 @@
-# Independent tuning candidate for SingleQuery/seq.
+# Independent tuning candidate for ModelValidation/par.
 # Rules: https://smt-comp.github.io/2025/rules.pdf
 # Official scoring: https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
 [meta]
-name = "cvc5-single-query-seq"
-track = "SingleQuery"
-performance = "seq"
+name = "cvc5-modelvalidation-par"
+track = "ModelValidation"
+performance = "par"
 jobs = 1
 cores = 4
 memory_mib = 30720
@@ -13,19 +13,9 @@ wall_limit_s = 1200
 [default]
 args = ["--fp-exp", "--use-portfolio"]
 
-[division.Arith]
+[division.QF_ADT_BitVec]
 args = []
-[division.Bitvec]
-args = []
-[division.Equality]
-args = []
-[division.Equality_LinearArith]
-args = []
-[division.Equality_MachineArith]
-args = []
-[division.Equality_NonLinearArith]
-args = []
-[division.FPArith]
+[division.QF_ADT_LinArith]
 args = []
 [division.QF_Bitvec]
 args = []
@@ -48,6 +38,4 @@ args = []
 [division.QF_NonLinearIntArith]
 args = []
 [division.QF_NonLinearRealArith]
-args = []
-[division.QF_Strings]
 args = []

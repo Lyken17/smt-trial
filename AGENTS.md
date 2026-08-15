@@ -2,11 +2,19 @@
 
 ## Supported scope
 
-The only currently supported and end-to-end tested competition track is
-`SingleQuery`. Incremental, UnsatCore, ModelValidation, and Parallel files are
-reserved scaffolding and must not be reported as reproduced 2025 results until
-their data, validation, execution, and scoring paths have been separately
-completed and tested.
+The supported regular competition tracks are `SingleQuery`, `Incremental`,
+`UnsatCore`, `ModelValidation`, and `Parallel`. `make smoke-all` is the required
+small functional check. A track must not be reported as a full local 2025
+reproduction unless its complete selection passes `make check-selection` (or
+all five pass `make check-all-selections`) and its validator/execution/scoring
+path was run. Cloud was not held in 2025 and ProofExhibition has no regular
+score; do not invent results for either.
+
+The organizers did not publish the final UnsatCore validator identity
+selection. The repository's public-pool mode is the maximal deterministic pool
+of publicly identifiable sound 2025 Single Query solvers and must retain
+`exact_organizer_pool=false`. Never describe it as the unknown exact private
+organizer selection.
 
 ## Immutable official inputs
 
@@ -24,12 +32,13 @@ Official references:
 - https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py
 - https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
 - https://doi.org/10.5281/zenodo.16740866
+- https://doi.org/10.5281/zenodo.15493096
 
 ## Tuning boundary
 
-For a Single Query tuning experiment, solver options may be changed only in:
+For a tuning experiment, solver options may be changed only in:
 
-- `configs/cvc5/SingleQuery/<Performance>.toml`
+- `configs/cvc5/<Track>/<Performance>.toml`
 
 Options may depend on Track, Division, and SMT-LIB Logic. They must not depend
 on benchmark name, path, checksum, expected status, execution order, previous
@@ -46,16 +55,29 @@ submission result.
 
 Wrong SAT/UNSAT answers are official scoring errors and must never be hidden or
 filtered. The `24` performance is the official `walltime_s <= 24` scoring view;
-it is not a 24-second execution limit. Formal Single Query execution uses the
-official 1200-second wall limit, 4 cores, 4800 CPU seconds, and 30 GiB memory.
+it is not a 24-second execution limit. Formal SingleQuery, Incremental,
+UnsatCore, and ModelValidation execution uses the official 1200-second wall
+limit, 4 cores, 4800 CPU seconds, and 30 GiB memory. Parallel uses 1200 seconds,
+128 cores, 153600 CPU seconds, and 1000 GiB. A smaller-host functional smoke is
+not an official-comparable Parallel timing result.
 
 ## Required workflow and reporting
 
-Build with `make setup-single-query`. The resumable selection wrapper must call
+Build all tracks with `make setup-all`; use `make setup-single-query` only for
+the documented reduced scope. The resumable selection wrapper must call
 the pinned official selection and scrambling functions and may skip a task only
-when both its generated yml and scrambled SMT2 already exist. A complete
-selection has 129,361 yml files and 129,361 scrambled SMT2 files; never round an
-incomplete cache up to the official total.
+when both its generated yml and non-empty scrambled SMT2 already exist. It may
+repair a missing YAML from an existing non-empty scrambled file only through
+the pinned official YAML generator and identical expected-status semantics.
+Complete selections are: SingleQuery 129,361; Incremental 22,942; UnsatCore
+70,604; ModelValidation 59,762; Parallel 400. Never round an incomplete cache
+up to an official total.
+
+The official Dolmen build's old Debian URLs now return 404. The compatibility
+step may activate only the date-pinned Debian snapshot already recorded in the
+pinned base image; it must not change the Dolmen commit, base-image digest,
+dependency declarations, compile command, or tests. Source:
+https://snapshot.debian.org/archive/debian/20240612T000000Z/
 
 Run and score one Division explicitly, for example:
 
@@ -76,6 +98,6 @@ must be labeled non-official diagnostic output.
 Do not commit usernames, passwords, home-directory paths, drive letters,
 machine names, regional package mirrors, fixed distribution codenames, fixed
 CPU architectures, or generated cache symlinks. Host-dependent storage and
-parallelism must use `configs/setup-single-query.env`, environment overrides,
-or automatic capability detection. Runtime files below `.cache`, `work`, and
-`results` are local artifacts and must remain untracked.
+parallelism must use `configs/setup-single-query.env`, `configs/setup-all.env`,
+environment overrides, or automatic capability detection. Runtime files below
+`.cache`, `work`, and `results` are local artifacts and must remain untracked.

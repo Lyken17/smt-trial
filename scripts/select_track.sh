@@ -36,15 +36,10 @@ if [[ ! -x "$scrambler" ]]; then
 fi
 
 case "$track" in
-  SingleQuery)
-    .venv/bin/python scripts/select_single_query.py \
+  SingleQuery|Incremental|ModelValidation|UnsatCore)
+    .venv/bin/python scripts/select_official_track.py --track "$track" \
       --data "$data" --benchmarks "$benchmarks" --execution "$execution" \
       --scrambler "$scrambler" --workers "$selection_jobs"
-    ;;
-  Incremental|ModelValidation|UnsatCore)
-    .venv/bin/smtcomp select-and-scramble \
-      "$track" "$data" "$benchmarks" "$execution" "$scrambler" \
-      --max-workers "$selection_jobs"
     ;;
   Parallel)
     # The official AWS selector produces Cloud and Parallel selections together.

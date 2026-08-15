@@ -1,7 +1,7 @@
 # SMT-COMP 2025 每个 Track 的 benchmark 数量
 
-本页回答完整竞赛各 Track 的数据量问题；当前仓库实际下载、选择和运行只支持
-SingleQuery，其他行是由官方 metadata 计算的后续路线图。
+本页回答完整竞赛各 Track 的数据量问题；`make check-all-selections` 会逐项核对这些
+官方 selection 总数、映射、非空 SMT2 与 YAML 引用。
 
 这里的“数据集数量”统一解释为 **benchmark instance 数量**。必须区分完整 SMT-LIB
 2025 元数据和经过官方 seed/selection 最终选中的 Track 数据。

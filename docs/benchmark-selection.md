@@ -2,8 +2,9 @@
 
 ## 1. 完整数据集
 
-当前可用入口 `make benchmarks-single-query` 查询 non-incremental Zenodo record，
-下载其中全部 89 个 `*.tar.zst`，按 Zenodo 给出的算法和 digest 校验，然后检查
+完整入口 `make benchmarks` 查询 non-incremental 与 incremental Zenodo record；
+精简入口 `make benchmarks-single-query` 只查询 non-incremental record。归档均按
+Zenodo 给出的算法和 digest 校验，然后检查
 tar 路径安全性并解压到：
 
 ```text
@@ -15,7 +16,7 @@ tar 路径安全性并解压到：
 2025 non-incremental 发布物的全部逻辑归档，再由官方 Single Query selector 产生
 正式选中集，而不是仓库自选小样本。权威身份清单是官方
 `data/benchmarks-2025.json.gz`。Incremental 的官方发布物是
-https://zenodo.org/records/15493096 ，但当前阶段不会下载或构建。
+https://zenodo.org/records/15493096 。
 
 ## 2. Single Query 官方选择算法
 
@@ -37,7 +38,7 @@ trivial 判定来自官方历史 competitive results：同一 benchmark 的竞�
 `Config.nyse_seed=2033841`。该数、日期 `2025-06-30` 和 submission seed 均直接
 来自官方固定提交，不能自行换随机种子来制造更有利的数据集。
 
-## 3. Parallel 规则记录（当前不构建）
+## 3. Parallel 官方选择
 
 实现依据为 `smtcomp/selection.py::aws_selection`：
 
@@ -51,13 +52,14 @@ trivial 判定来自官方历史 competitive results：同一 benchmark 的竞�
 
 Parallel 页面所说的 400 个实例与这里的 `aws_num_selected=400` 一致。
 
-## 4. 当前可复现命令
+## 4. 可复现命令
 
 ```bash
 make metadata
 make cache
-make benchmarks-single-query
-make select-single-query
+make benchmarks
+make select-all
+make check-all-selections
 ```
 
 不能修改 `data/*.json.gz`、selection cache、scrambler、seed、历史结果或生成后的
@@ -68,10 +70,11 @@ worker 数；`CACHE_PLACEMENT` 和 `EXTERNAL_CACHE_ROOT` 只决定生成文件�
 filesystem。这些设置都不得改变官方 metadata、历史结果、seed、selected IDs 或
 scramble 输出。
 
-`scripts/select_single_query.py` 是中断恢复包装器，不实现另一套 selection：它直接
+`scripts/select_official_track.py` 是普通 Track 的中断恢复包装器，不实现另一套 selection：它直接
 调用固定 checkout 的 `selection.helper`、`create_scramble_id` 与 `scramble_file`，并
-始终重写完整官方 `original_id.csv`。只有官方 yml 和 scrambled SMT2 同时存在时才
-跳过该任务；缺任一文件都会用同一官方 seed 重新生成。
+始终重写完整官方 `original_id.csv`。只有官方 yml 和非空 scrambled SMT2 同时存在时
+才跳过该任务；缺任一文件或空文件都会用同一官方 seed 重新生成。Parallel 直接调用
+官方 `scramble-aws`。
 进度包装使用 Python `as_completed`，只改变终端进度显示顺序，不改变任务输入、
 官方 scrambler 调用、seed 或输出文件名。实现文档：
 https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.as_completed 。

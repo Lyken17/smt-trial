@@ -1,9 +1,9 @@
-# Independent tuning candidate for SingleQuery/seq.
+# Independent tuning candidate for UnsatCore/seq.
 # Rules: https://smt-comp.github.io/2025/rules.pdf
 # Official scoring: https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
 [meta]
-name = "cvc5-single-query-seq"
-track = "SingleQuery"
+name = "cvc5-unsatcore-seq"
+track = "UnsatCore"
 performance = "seq"
 jobs = 1
 cores = 4

@@ -23,11 +23,18 @@ class SetupConfigTests(unittest.TestCase):
         self.assertNotIn("\t./scripts/", text)
 
     def test_single_query_setup_config_is_valid_bash(self) -> None:
-        subprocess.run(
-            ["bash", "-n", "configs/setup-single-query.env"],
-            cwd=ROOT,
-            check=True,
+        for config in ("configs/setup-single-query.env", "configs/setup-all.env"):
+            subprocess.run(["bash", "-n", config], cwd=ROOT, check=True)
+
+    def test_all_track_setup_adds_only_required_track_dependencies(self) -> None:
+        command = (
+            "source configs/setup-all.env; "
+            "test \"$BENCHMARK_COMPONENT\" = benchmarks; "
+            "test \"$SOLVER_COMPONENT\" = solver; "
+            "[[ \" ${APT_PACKAGES[*]} \" == *\" docker.io \"* ]]; "
+            "[[ \" ${APT_PACKAGES[*]} \" == *\" docker-buildx \"* ]]"
         )
+        subprocess.run(["bash", "-c", command], cwd=ROOT, check=True)
 
     def test_single_query_setup_config_defines_portable_controls(self) -> None:
         command = (
@@ -59,7 +66,6 @@ class SetupConfigTests(unittest.TestCase):
         )
 
     def test_checked_in_setup_has_no_host_specific_path(self) -> None:
-        text = (ROOT / "configs/setup-single-query.env").read_text()
         forbidden = (
             r"[A-Za-z]:\\",
             r"/mnt/[A-Za-z]/",
@@ -67,8 +73,10 @@ class SetupConfigTests(unittest.TestCase):
             r"/var/tmp/",
             r"LOCAL_DEB_(CODENAME|ARCH)",
         )
-        for pattern in forbidden:
-            self.assertIsNone(re.search(pattern, text), pattern)
+        for config in ("configs/setup-single-query.env", "configs/setup-all.env"):
+            text = (ROOT / config).read_text()
+            for pattern in forbidden:
+                self.assertIsNone(re.search(pattern, text), f"{config}: {pattern}")
 
 
 if __name__ == "__main__":

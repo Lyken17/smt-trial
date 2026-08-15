@@ -1,10 +1,10 @@
-# Independent tuning candidate for SingleQuery/seq.
+# Independent tuning candidate for Incremental/par.
 # Rules: https://smt-comp.github.io/2025/rules.pdf
 # Official scoring: https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
 [meta]
-name = "cvc5-single-query-seq"
-track = "SingleQuery"
-performance = "seq"
+name = "cvc5-incremental-par"
+track = "Incremental"
+performance = "par"
 jobs = 1
 cores = 4
 memory_mib = 30720
@@ -29,11 +29,11 @@ args = []
 args = []
 [division.QF_Bitvec]
 args = []
-[division.QF_Datatypes]
-args = []
 [division.QF_Equality]
 args = []
 [division.QF_Equality_Bitvec]
+args = []
+[division.QF_Equality_Bitvec_Arith]
 args = []
 [division.QF_Equality_LinearArith]
 args = []
@@ -46,8 +46,4 @@ args = []
 [division.QF_LinearRealArith]
 args = []
 [division.QF_NonLinearIntArith]
-args = []
-[division.QF_NonLinearRealArith]
-args = []
-[division.QF_Strings]
 args = []

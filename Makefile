@@ -4,7 +4,7 @@ SMTCOMP ?= .venv/bin/smtcomp
 TRACK ?= SingleQuery
 DIVISION ?=
 SETUP_CONFIG ?= configs/setup-single-query.env
-DOWNLOAD_JOBS ?= 1
+DOWNLOAD_JOBS ?= 8
 DOWNLOAD_SEGMENTS ?= 8
 EXTRACT_JOBS ?= 4
 
@@ -39,18 +39,19 @@ RESULTS ?= $(TRACK_RESULTS_$(TRACK))
 CVC5 ?= $(TRACK_CVC5_$(TRACK))
 XML ?= work/cvc5-$(TRACK)$(if $(strip $(DIVISION)),-$(DIVISION)-$(PERFORMANCE),).xml
 TRACE_EXECUTOR ?= .cache/execution/smtlib2_trace_executor
-UC_VALIDATION_MODE ?= external
+UC_VALIDATION_MODE ?= public-pool
 DIVISION_ARG := $(if $(strip $(DIVISION)),--division $(DIVISION),)
 UC_VALIDATION_RESULTS := $(dir $(RESULTS))unsat_core_validation_results
 UC_VALIDATOR_CACHE := .cache/execution
 UC_VALIDATOR_MANIFEST := work/unsat-core-validator-pool.json
 
-.PHONY: system-deps storage-single-query setup setup-single-query metadata benchmarks benchmarks-single-query \
+.PHONY: system-deps storage-single-query setup setup-single-query setup-all metadata benchmarks benchmarks-single-query \
 	solver solver-single-query cache select select-single-query select-all execution-tools model-validator \
 	prepare run validate-model validate-unsat-core generate-unsat-core-validation \
 	manifest-unsat-core-validator-pool build-unsat-core-validator-pool \
 	run-unsat-core-validator-pool run-unsat-core-validator \
-	merge-unsat-core-validation init-configs score score-overall score-matrix score-24 score-parallel clean
+	merge-unsat-core-validation init-configs check-selection check-all-selections smoke-all \
+	score score-overall score-matrix score-24 score-parallel clean
 
 system-deps:
 	bash scripts/install_system_deps.sh $(SETUP_CONFIG)
@@ -74,11 +75,28 @@ setup-single-query:
 	$(MAKE) cache
 	$(MAKE) select-single-query
 
+setup-all: SETUP_CONFIG := configs/setup-all.env
+setup-all:
+	$(MAKE) system-deps SETUP_CONFIG=$(SETUP_CONFIG)
+	$(MAKE) storage-single-query SETUP_CONFIG=$(SETUP_CONFIG)
+	$(MAKE) setup
+	$(MAKE) benchmarks SETUP_CONFIG=$(SETUP_CONFIG)
+	$(MAKE) solver
+	$(MAKE) cache
+	$(MAKE) execution-tools
+	$(MAKE) build-unsat-core-validator-pool
+	$(MAKE) model-validator
+	$(MAKE) select-all SETUP_CONFIG=$(SETUP_CONFIG)
+	$(MAKE) check-all-selections
+
 metadata:
 	$(PYTHON) scripts/fetch_official.py metadata
 
 benchmarks:
-	$(PYTHON) scripts/fetch_official.py benchmarks
+	@set -a; source $(SETUP_CONFIG); set +a; \
+		DOWNLOAD_JOBS=$(DOWNLOAD_JOBS) DOWNLOAD_SEGMENTS=$(DOWNLOAD_SEGMENTS) \
+		EXTRACT_JOBS=$(EXTRACT_JOBS) \
+		$(PYTHON) scripts/fetch_official.py benchmarks
 
 benchmarks-single-query: storage-single-query
 	@set -a; source $(SETUP_CONFIG); set +a; \
@@ -109,6 +127,15 @@ select-all: cache benchmarks
 	bash scripts/select_track.sh UnsatCore
 	bash scripts/select_track.sh Parallel
 
+check-selection:
+	$(PYTHON) scripts/check_track_selection.py $(TRACK)
+
+check-all-selections:
+	$(PYTHON) scripts/check_track_selection.py all
+
+smoke-all:
+	$(PYTHON) scripts/smoke_all_tracks.py
+
 execution-tools:
 	@if [[ ! -x "$(TRACE_EXECUTOR)" ]]; then $(SMTCOMP) prepare-execution .cache/execution; fi
 	@source versions.env; \
@@ -123,7 +150,15 @@ model-validator:
 		source versions.env; git clone "$$DOLMEN_REPOSITORY" \
 			.cache/official/external-tools/dolmen/docker/dolmen; \
 	fi
-	$(SMTCOMP) build-dolmen .cache/official/data
+	$(PYTHON) scripts/prepare_dolmen_build.py
+	@if docker info >/dev/null 2>&1; then \
+		$(SMTCOMP) build-dolmen .cache/official/data; \
+	elif getent group docker | cut -d: -f4 | tr ',' '\n' | grep -Fxq "$$USER"; then \
+		sg docker -c '$(SMTCOMP) build-dolmen .cache/official/data'; \
+	else \
+		echo "Docker daemon access is required; add the current user to the docker group" >&2; \
+		exit 2; \
+	fi
 
 prepare:
 	@test -n "$(CONFIG)" || { echo "unsupported TRACK=$(TRACK)" >&2; exit 2; }

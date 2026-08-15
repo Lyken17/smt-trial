@@ -2,11 +2,10 @@
 
 ## 唯一调参面
 
-当前受支持的调参面是 `configs/cvc5/SingleQuery/<Performance>.toml`。每个文件包含
-SingleQuery 全部 19 个 Division，Division/Logic 参数在文件内部覆盖。其他 Track 当前
-没有可用 TOML，不得把其代码骨架声明为已经完成复现。
+受支持的唯一调参面是 `configs/cvc5/<Track>/<Performance>.toml`。每个文件必须包含
+对应 Track 的全部 Division，Division/Logic 参数在文件内部覆盖。
 
-配置目录先按 Track 分层，再按 Performance 分文件。SingleQuery 当前包含 5 个配置。
+配置目录先按 Track 分层，再按 Performance 分文件，共 11 个合法配置。
 `24` 仍是结果的评分视图，不是 24 秒运行限制；文件名中的 `24`
 表示该次完整重跑以 24 score 为优化目标。
 
@@ -19,7 +18,7 @@ SingleQuery 全部 19 个 Division，Division/Logic 参数在文件内部覆盖�
 
 配置文件在 `[meta]` 中固定 `performance`。`make prepare/run` 会核对命令行
 Performance 与该字段；不匹配就停止。Division 只选择文件内部的一个 Division，省略
-Division 则运行全部 19 个。Performance 不会进入 solver dispatch。默认调用示例：
+Division 则运行该 Track 的全部 Division。Performance 不会进入 solver dispatch。默认调用示例：
 
 ```bash
 make run TRACK=SingleQuery DIVISION=QF_LinearIntArith PERFORMANCE=24

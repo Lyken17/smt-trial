@@ -20,6 +20,21 @@ class DispatchTests(unittest.TestCase):
     def test_parallel_mapping_is_official(self):
         self.assertEqual(division_for("Parallel", "QF_BV"), "QF_Bitvec")
 
+    def test_non_incremental_track_protocols_are_harness_owned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            benchmark = Path(tmp) / "x.smt2"
+            benchmark.write_text("(set-logic QF_LIA)\n(check-sat)\n")
+            for track in ("SingleQuery", "UnsatCore", "ModelValidation", "Parallel"):
+                performance = "24" if track == "SingleQuery" else "par"
+                args = solver_args(
+                    ROOT / "configs/cvc5" / track / f"{performance}.toml",
+                    track,
+                    benchmark,
+                )
+                self.assertIn("--no-incremental", args)
+                self.assertIn("--no-interactive", args)
+                self.assertIn("--use-portfolio", args)
+
     def test_incremental_protocol_is_harness_owned(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

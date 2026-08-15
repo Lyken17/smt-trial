@@ -1,12 +1,25 @@
-# Single Query 操作手册
+# 全 Track 操作手册
 
-当前只承诺 SMT-COMP 2025 Single Query 可完整构建、运行和评分。
+五个实际举办 Track 共用以下构建、运行和评分入口；Cloud 2025 未举办。
 
 ## 构建
 
 ```bash
+make setup-all
+# 仅需要 Single Query 时：
 make setup-single-query
 ```
+
+`make setup-all` 读取 `configs/setup-all.env`，并依次构建 non-incremental 与
+incremental 数据、两套官方 cvc5、trace executor、Dolmen、UnsatCore 最大公开验证池
+和全部 selection。`make check-all-selections` 是最终强制验收。官方规则：
+https://smt-comp.github.io/2025/rules.pdf 。
+Dolmen 的旧 Debian 10 rolling 软件源已迁移；构建器只激活官方基础镜像自身记录的
+日期固定 snapshot，依据：https://snapshot.debian.org/archive/debian/20240612T000000Z/ 。
+
+资源较小的开发机使用 `make smoke-all` 做五 Track 真实协议/validator 小样例；它不生成
+完整 selection，也不声称得到官方可比 Parallel 耗时。资源充足机器再执行
+`make setup-all && make check-all-selections`。
 
 等价的可恢复分步命令：
 
@@ -65,7 +78,7 @@ https://learn.microsoft.com/windows/wsl/wsl-config#wslconfig 。
 
 ## 调参、运行、评分
 
-按 Performance 分开的配置位于 `configs/cvc5/SingleQuery/<Performance>.toml`；每个
+按 Performance 分开的配置位于 `configs/cvc5/<Track>/<Performance>.toml`；每个
 文件内部包含全部 Division。例如：
 
 ```bash
@@ -88,6 +101,7 @@ https://smt-comp.github.io/2025/rules.pdf ；官方 submission 定义：
 https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/submissions/cvc5.json 。
 
 Single Query 的合法 performance 是 `24`、`par`、`seq`、`sat`、`unsat`。
+Incremental/Parallel 只有 `par`，UnsatCore/ModelValidation 为 `par`、`seq`。
 `24` 只筛选 `walltime_s <= 24`，正式运行仍使用 PDF 规定的 1200 秒、4 cores、
 30 GiB。规则：https://smt-comp.github.io/2025/rules.pdf 。评分代码：
 https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py 。
@@ -112,6 +126,7 @@ test -x .cache/solver/default/bin/cvc5
 # Zenodo README 的 archive 文件总计为 450472；metadata 条目数为 450474。
 test "$(find -L .cache/benchmarks/non-incremental -name '*.smt2' | wc -l)" -eq 450472
 test "$(find -L .cache/execution/benchmarks/files -name '*.yml' | wc -l)" -eq 129361
+make check-all-selections
 .venv/bin/python -m unittest discover -s tests -v
 ```
 

@@ -1,7 +1,6 @@
 # Track、Division 与数据边界
 
-下表描述官方 2025 竞赛本身。当前仓库只承诺 SingleQuery 构建、运行和评分；其余
-Track 是后续扩展范围。
+下表描述官方 2025 竞赛本身；本仓库支持其中五个实际举办且具有常规评分的 Track。
 
 Division/Logic 映射不在本仓库复制维护，而是在运行时直接读取官方
 `smtcomp.defs.tracks`，避免表格与官方代码漂移。可用

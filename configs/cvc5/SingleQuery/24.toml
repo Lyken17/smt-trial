@@ -11,7 +11,7 @@ memory_mib = 30720
 wall_limit_s = 1200
 
 [default]
-args = ["--quiet", "--fp-exp", "--use-portfolio"]
+args = ["--fp-exp", "--use-portfolio"]
 
 [division.Arith]
 args = []

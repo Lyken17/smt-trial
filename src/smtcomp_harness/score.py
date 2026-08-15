@@ -141,8 +141,8 @@ def overall_scores(data: Path, track_name: str, sources: list[Path]) -> pl.DataF
     from smtcomp import defs, results as official_results, scoring as official_scoring
     from smtcomp.generate_website_page import normalized_correctness_score, sq_generate_datas
 
-    if track_name != "SingleQuery":
-        raise ValueError("Best Overall is currently wired and tested only for SingleQuery")
+    if track_name not in ALLOWED_KINDS:
+        raise ValueError(f"Track {track_name} has no regular SMT-COMP 2025 score")
     track = defs.Track(track_name)
     config = defs.Config(data)
     rows: list[dict[str, object]] = []
@@ -158,6 +158,9 @@ def overall_scores(data: Path, track_name: str, sources: list[Path]) -> pl.DataF
         divisions = sq_generate_datas(config, scores, True, track)
 
         for kind in official_scoring.Kind:
+            performance = KIND_LABELS[kind.name]
+            if performance not in ALLOWED_KINDS[track_name]:
+                continue
             totals: dict[str, dict[str, float | int]] = {}
             for entry in normalized_correctness_score(divisions, scores, track, kind):
                 total = totals.setdefault(entry.name, {"score": 0.0, "tie_time": 0.0, "divisions": 0})
@@ -168,7 +171,7 @@ def overall_scores(data: Path, track_name: str, sources: list[Path]) -> pl.DataF
             for rank, (solver, total) in enumerate(ordered, start=1):
                 rows.append(
                     {
-                        "performance": KIND_LABELS[kind.name],
+                        "performance": performance,
                         "rank": rank,
                         "solver": solver,
                         "overall_score": total["score"],

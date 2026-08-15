@@ -1,7 +1,6 @@
 # 官方 Division 评分与竞赛级 Recognition
 
-当前已接通并验收的运行路径只有 SingleQuery；其他 Track 的评分语义保留为官方
-规则参考和后续实现目标。
+五个实际举办 Track 均使用同一固定官方评分实现；Track/Division/performance 不混排。
 
 本仓库的 `smtcomp-score` 直接导入固定提交的：
 
@@ -84,15 +83,15 @@ Track/kind 组合。
 行，不能作为跨 Division 官方奖项。运行 `make score-matrix` 可得到全部 195 个
 合法 `(Track, Division, Performance)` 三元组。
 
-Single Query 全量 Best Overall：
+任一 Track 全量 Best Overall（示例为 SingleQuery）：
 
 ```bash
 make score-overall TRACK=SingleQuery \
   RESULTS=.cache/official/data/results-sq-2025.json.gz
 ```
 
-该入口不需要 `DIVISION` 或 `PERFORMANCE`，一次计算五种 performance；默认只显示
-`cvc5`。官方结果页面：
+该入口不需要 `DIVISION`；只计算该 Track 合法的 performance，默认只显示 `cvc5`。
+官方结果页面：
 https://smt-comp.github.io/2025/results/best-overall-single-query/ 。
 
 对本地 BenchExec 结果，包装器会拒绝尚含

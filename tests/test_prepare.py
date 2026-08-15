@@ -10,6 +10,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class PrepareTests(unittest.TestCase):
+    def test_every_supported_track_uses_official_resources(self):
+        cases = {
+            "SingleQuery": ("24", "QF_LIA", 4, 30720),
+            "UnsatCore": ("par", "QF_LIA", 4, 30720),
+            "ModelValidation": ("par", "QF_LIA", 4, 30720),
+            "Parallel": ("par", "QF_LIA", 128, 1024000),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cvc5 = root / "cvc5"
+            cvc5.write_text("#!/bin/sh\n")
+            cvc5.chmod(0o755)
+            for track, (performance, logic, cores, memory) in cases.items():
+                selection = root / track / logic
+                selection.mkdir(parents=True)
+                (selection / f"0_{logic}_x.yml").write_text("format_version: '2.0'\n")
+                output = root / f"{track}.xml"
+                prepare(
+                    track,
+                    ROOT / "configs/cvc5" / track / f"{performance}.toml",
+                    cvc5,
+                    selection.parent,
+                    output,
+                    performance=performance,
+                )
+                xml = ET.parse(output).getroot()
+                self.assertEqual(xml.attrib["walltimelimit"], "1200s")
+                self.assertEqual(xml.attrib["cpuCores"], str(cores))
+                self.assertEqual(xml.attrib["timelimit"], f"{1200 * cores}s")
+                self.assertEqual(xml.attrib["memlimit"], f"{memory} MB")
+
     def test_official_single_query_limits_in_xml(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -94,21 +125,19 @@ class PrepareTests(unittest.TestCase):
             selection.mkdir(parents=True)
             (selection / "0_QF_LIA_x.yml").write_text("format_version: '2.0'\n")
             output = root / "run.xml"
-            config = root / "incremental.toml"
-            config.write_text(
-                '[meta]\nname="test-inc"\ntrack="Incremental"\njobs=1\ncores=4\n'
-                'memory_mib=30720\nwall_limit_s=1200\n[default]\nargs=[]\n'
-            )
             prepare(
                 "Incremental",
-                config,
+                ROOT / "configs/cvc5/Incremental/par.toml",
                 cvc5,
                 selection.parent,
                 output,
                 trace_executor=trace,
+                performance="par",
             )
             xml = ET.parse(output).getroot()
             self.assertEqual(xml.attrib["tool"], "smtcomp_harness.benchexec_tool_incremental")
+            self.assertEqual(xml.attrib["cpuCores"], "4")
+            self.assertEqual(xml.attrib["memlimit"], "30720 MB")
             self.assertIn(str(trace.resolve()), [node.text for node in xml.findall(".//option")])
 
     def test_unsat_core_validation_uses_official_limits(self):

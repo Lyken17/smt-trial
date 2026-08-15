@@ -53,4 +53,25 @@ if (( ${#missing[@]} > 0 )); then
   exit 2
 fi
 
+# Docker packages create a daemon socket owned by the docker group. For the
+# all-Track setup, enroll the invoking user so the official Dolmen build works
+# in the same make invocation (the Makefile uses `sg docker` until next login).
+if [[ " ${REQUIRED_COMMANDS[*]} " == *" docker "* ]] && (( EUID != 0 )); then
+  if command -v systemctl >/dev/null && command -v sudo >/dev/null \
+      && ! sudo -n docker info >/dev/null 2>&1; then
+    if sudo -n true 2>/dev/null || [[ -t 0 && -t 1 ]]; then
+      sudo systemctl start docker
+    fi
+  fi
+  if getent group docker >/dev/null && ! id -nG "$USER" | tr ' ' '\n' | grep -qx docker; then
+    if command -v sudo >/dev/null && (sudo -n true 2>/dev/null || [[ -t 0 && -t 1 ]]); then
+      sudo usermod -aG docker "$USER"
+    else
+      echo "Docker is installed, but $USER is not in the docker group." >&2
+      echo "Run: sudo usermod -aG docker \"\$USER\"" >&2
+      exit 2
+    fi
+  fi
+fi
+
 echo "System dependency check passed."

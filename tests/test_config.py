@@ -11,13 +11,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ConfigTests(unittest.TestCase):
     def test_checked_in_configs(self):
-        for performance in ("24", "par", "seq", "sat", "unsat"):
-            data = load(ROOT / "configs/cvc5/SingleQuery" / f"{performance}.toml", "SingleQuery")
-            self.assertEqual(data["meta"]["performance"], performance)
-            self.assertEqual(
-                set(data.get("division", {})),
-                {division.name for division in defs.tracks[defs.Track.SingleQuery]},
-            )
+        performances = {
+            "SingleQuery": ("24", "par", "seq", "sat", "unsat"),
+            "Incremental": ("par",),
+            "UnsatCore": ("par", "seq"),
+            "ModelValidation": ("par", "seq"),
+            "Parallel": ("par",),
+        }
+        for track_name, kinds in performances.items():
+            for performance in kinds:
+                data = load(ROOT / "configs/cvc5" / track_name / f"{performance}.toml", track_name)
+                self.assertEqual(data["meta"]["performance"], performance)
+                self.assertEqual(
+                    set(data.get("division", {})),
+                    {division.name for division in defs.tracks[defs.Track(track_name)]},
+                )
 
     def test_resource_limit_cannot_be_changed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -33,7 +41,7 @@ class ConfigTests(unittest.TestCase):
         data = load(ROOT / "configs/cvc5/SingleQuery/24.toml")
         self.assertEqual(
             args_for(data, "QF_LinearIntArith", "QF_LIA"),
-            ["--quiet", "--fp-exp", "--use-portfolio"],
+            ["--fp-exp", "--use-portfolio"],
         )
 
     def test_wrong_track_division_is_rejected(self):

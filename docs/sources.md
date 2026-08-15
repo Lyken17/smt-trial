@@ -19,6 +19,7 @@
 | BenchExec | https://github.com/sosy-lab/benchexec | 官方生成的 XML 所使用的资源执行器 |
 | Incremental trace executor | https://github.com/SMT-COMP/trace-executor/releases/tag/smtcomp2024-rc1 | 官方 2025 代码指定的发布包，本仓库额外验证 SHA-256 |
 | Model validator | https://github.com/SMT-COMP/dolmen/tree/871b9de26643052dfcfa5b47ee23785f0b983219 | `defs.py` 固定的 Dolmen commit |
+| Debian Buster snapshot | https://snapshot.debian.org/archive/debian/20240612T000000Z/ | 激活官方 Dolmen 基础镜像内已写明但被注释的日期固定源，替代已 404 的 rolling URL |
 
 ## 精确文件依据
 
@@ -67,6 +68,14 @@
 
 `versions.env` 是所有外部版本的单一入口。`scripts/fetch_official.py` 从固定提交
 下载元数据和 submission 文件；Zenodo 文件则逐个使用 API 返回的 checksum 验证。
+
+官方 Dolmen Dockerfile 固定的 Debian 10 镜像同时包含日期固定 snapshot URL 和普通
+`deb.debian.org` URL；后者在 2026 年已因 Buster 迁移返回 404。本仓库的
+`scripts/prepare_dolmen_build.py` 只启用镜像中原有的 `20240612T000000Z` snapshot，
+并显式安装官方 opam 首次构建所请求的 `libgmp-dev`、`libmpfr-dev`、`pkg-config`；
+`--assume-depexts` 只阻止 opam 因归档源索引判定 depext “不可用”，三项依赖仍真实安装。
+它不改变 Dolmen commit、OCaml base-image digest、OCaml 依赖声明、编译或测试命令。Debian
+snapshot 服务说明：https://snapshot.debian.org/ 。
 
 ## cvc5 官方提交
 
