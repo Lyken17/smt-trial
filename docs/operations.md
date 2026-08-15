@@ -6,8 +6,6 @@
 
 ```bash
 make setup-all
-# 仅需要 Single Query 时：
-make setup-single-query
 ```
 
 `make setup-all` 读取 `configs/setup-all.env`，并依次构建 non-incremental 与
@@ -25,21 +23,25 @@ Dolmen 的旧 Debian 10 rolling 软件源已迁移；构建器只激活官方基
 
 ```bash
 make system-deps
-make storage-single-query
+make storage
 make setup
-make benchmarks-single-query
-make solver-single-query
+make benchmarks
+make solver
 make cache
-make select-single-query
+make execution-tools
+make build-unsat-core-validator-pool
+make model-validator
+make select-all
+make check-all-selections
 ```
 
-`make system-deps` 读取 `configs/setup-single-query.env`。Debian/Ubuntu 使用该机器
+`make system-deps` 读取 `configs/setup-all.env`。Debian/Ubuntu 使用该机器
 现有的 APT 软件源；交互终端允许 sudo 提示当前用户输入密码。其他发行版只要已经
 提供配置中的等价命令和 Python venv 即可通过，否则应使用其本机包管理器安装。
 仓库不固定区域镜像、发行版代号、CPU 架构、用户名或 sudo 密码。APT 包说明：
 https://packages.ubuntu.com/ 。
 
-`make storage-single-query` 根据发布物 README 的约 78 GB 解压体积预检磁盘。普通
+`make storage` 根据两套发布物和全部生成资产预检至少 100 GiB 可用空间。普通
 Linux 默认把所有内容放在仓库 `.cache`。当 `CACHE_PLACEMENT=auto` 且检测到仓库位于
 WSL 的 Windows 挂载盘时，才使用当前用户的 `${XDG_CACHE_HOME:-$HOME/.cache}` 并在
 工作区建立符号链接；已有有效链接会复用。任何主机都可通过绝对路径
@@ -52,24 +54,26 @@ https://learn.microsoft.com/windows/wsl/filesystems 。
 官方工具：https://github.com/SMT-COMP/smt-comp.github.io 。官方 scrambler：
 https://github.com/SMT-COMP/scrambler 。固定值见 `versions.env`。
 
-`make benchmarks-single-query` 只处理 Zenodo non-incremental record：
-https://zenodo.org/records/16740866 。每个压缩包下载完成后先验证 Zenodo checksum，
-再检查 tar member 不含绝对路径或 `..`，最后展开。不会下载 incremental record。
+`make benchmarks` 同时处理 non-incremental record
+https://zenodo.org/records/16740866 和 incremental record
+https://zenodo.org/records/15493096 。每个压缩包下载完成后先验证 Zenodo checksum，
+再检查 tar member 不含绝对路径或 `..`，最后展开。
 默认并行展开 4 个 archive；通过 `EXTRACT_JOBS=N` 可覆盖。它只控制本地解压并发，
 不参与 benchmark 选择或评分。worker-pool 文档：
 https://docs.python.org/3/library/concurrent.futures.html 。
 
-`make solver-single-query` 只处理官方 cvc5 default archive：
-https://zenodo.org/records/15760304/files/cvc5-default.zip 。不会下载 `cvc5-inc.zip`。
+`make solver` 下载并校验官方 cvc5 default 与 incremental archive：
+https://zenodo.org/records/15760304/files/cvc5-default.zip 和
+https://zenodo.org/records/15760304/files/cvc5-inc.zip 。
 
-`make cache` 直接运行官方 `create-cache`。`make select-single-query` 通过可恢复包装器
+`make cache` 直接运行官方 `create-cache`。`make select-all` 通过可恢复包装器
 直接调用固定版本的官方 `selection.helper`、`create_scramble_id` 和 `scramble_file`；
 只有 yml 与 scrambled SMT2 都存在的任务才跳过。选择代码来源：
 https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/selection.py 。
 本地 scramble 并发默认由 `SELECTION_JOBS=auto` 按 CPU 数确定并限制到最多 16；可用
 正整数覆盖，只影响构建时间。
 
-若选择被中断，直接重跑 `make select-single-query`；包装器会重写完整官方映射并只
+若选择被中断，直接重跑 `make select-all`；包装器会重写完整官方映射并只
 补缺 yml/SMT2。官方选中的
 `QF_ABV/2019-Mann/ridecore-qf_abv-bug.smt2` 原文件约 1.1 GB，在内存受限的 WSL
 上可能使 scrambler 被系统终止。此时 selection 仍不完整，不能把 129,360 个 yml

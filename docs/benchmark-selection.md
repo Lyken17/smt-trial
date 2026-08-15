@@ -2,8 +2,7 @@
 
 ## 1. 完整数据集
 
-完整入口 `make benchmarks` 查询 non-incremental 与 incremental Zenodo record；
-精简入口 `make benchmarks-single-query` 只查询 non-incremental record。归档均按
+`make benchmarks` 查询 non-incremental 与 incremental Zenodo record。归档均按
 Zenodo 给出的算法和 digest 校验，然后检查
 tar 路径安全性并解压到：
 
@@ -65,7 +64,7 @@ make check-all-selections
 不能修改 `data/*.json.gz`、selection cache、scrambler、seed、历史结果或生成后的
 benchmark。任何 selection 变更都会变成另一个实验，不再是 SMT-COMP 2025 复现。
 
-`configs/setup-single-query.env` 中的 `SELECTION_JOBS` 只控制官方 scrambler 的本地
+`configs/setup-all.env` 中的 `SELECTION_JOBS` 只控制官方 scrambler 的本地
 worker 数；`CACHE_PLACEMENT` 和 `EXTERNAL_CACHE_ROOT` 只决定生成文件存在哪个
 filesystem。这些设置都不得改变官方 metadata、历史结果、seed、selected IDs 或
 scramble 输出。

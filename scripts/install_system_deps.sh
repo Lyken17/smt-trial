@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-config="${1:-configs/setup-single-query.env}"
+config="${1:-configs/setup-all.env}"
 if [[ ! -f "$config" ]]; then
   echo "dependency configuration not found: $config" >&2
   exit 2

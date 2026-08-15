@@ -63,8 +63,8 @@ not an official-comparable Parallel timing result.
 
 ## Required workflow and reporting
 
-Build all tracks with `make setup-all`; use `make setup-single-query` only for
-the documented reduced scope. The resumable selection wrapper must call
+Build all tracks with `make setup-all`. There is no reduced SingleQuery-only
+setup path. The resumable selection wrapper must call
 the pinned official selection and scrambling functions and may skip a task only
 when both its generated yml and non-empty scrambled SMT2 already exist. It may
 repair a missing YAML from an existing non-empty scrambled file only through
@@ -98,6 +98,6 @@ must be labeled non-official diagnostic output.
 Do not commit usernames, passwords, home-directory paths, drive letters,
 machine names, regional package mirrors, fixed distribution codenames, fixed
 CPU architectures, or generated cache symlinks. Host-dependent storage and
-parallelism must use `configs/setup-single-query.env`, `configs/setup-all.env`,
+parallelism must use `configs/setup-all.env`,
 environment overrides, or automatic capability detection. Runtime files below
 `.cache`, `work`, and `results` are local artifacts and must remain untracked.

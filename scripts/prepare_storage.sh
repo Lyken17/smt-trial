@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-config="${1:-configs/setup-single-query.env}"
+config="${1:-configs/setup-all.env}"
 # shellcheck disable=SC1090
 source "$config"
 

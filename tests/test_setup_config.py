@@ -22,33 +22,29 @@ class SetupConfigTests(unittest.TestCase):
         text = (ROOT / "Makefile").read_text()
         self.assertNotIn("\t./scripts/", text)
 
-    def test_single_query_setup_config_is_valid_bash(self) -> None:
-        for config in ("configs/setup-single-query.env", "configs/setup-all.env"):
-            subprocess.run(["bash", "-n", config], cwd=ROOT, check=True)
+    def test_all_track_setup_config_is_valid_bash(self) -> None:
+        subprocess.run(["bash", "-n", "configs/setup-all.env"], cwd=ROOT, check=True)
 
     def test_all_track_setup_adds_only_required_track_dependencies(self) -> None:
         command = (
             "source configs/setup-all.env; "
-            "test \"$BENCHMARK_COMPONENT\" = benchmarks; "
-            "test \"$SOLVER_COMPONENT\" = solver; "
             "[[ \" ${APT_PACKAGES[*]} \" == *\" docker.io \"* ]]; "
             "[[ \" ${APT_PACKAGES[*]} \" == *\" docker-buildx \"* ]]"
         )
         subprocess.run(["bash", "-c", command], cwd=ROOT, check=True)
 
-    def test_single_query_setup_config_defines_portable_controls(self) -> None:
+    def test_all_track_setup_config_defines_portable_controls(self) -> None:
         command = (
-            "source configs/setup-single-query.env; "
+            "source configs/setup-all.env; "
             "test \"$CACHE_PLACEMENT\" = auto; "
             "test -z \"$EXTERNAL_CACHE_ROOT\"; "
-            "test \"$BENCHMARK_COMPONENT\" = non-incremental-benchmarks; "
-            "test \"$SOLVER_COMPONENT\" = default-solver"
+            "test \"$MIN_FREE_GIB\" = 100"
         )
         subprocess.run(["bash", "-c", command], cwd=ROOT, check=True)
 
     def test_environment_overrides_are_preserved(self) -> None:
         command = (
-            "source configs/setup-single-query.env; "
+            "source configs/setup-all.env; "
             "test \"$CACHE_PLACEMENT\" = external; "
             "test \"$EXTERNAL_CACHE_ROOT\" = /srv/smt-cache; "
             "test \"$SELECTION_JOBS\" = 3"
@@ -73,7 +69,7 @@ class SetupConfigTests(unittest.TestCase):
             r"/var/tmp/",
             r"LOCAL_DEB_(CODENAME|ARCH)",
         )
-        for config in ("configs/setup-single-query.env", "configs/setup-all.env"):
+        for config in ("configs/setup-all.env",):
             text = (ROOT / config).read_text()
             for pattern in forbidden:
                 self.assertIsNone(re.search(pattern, text), f"{config}: {pattern}")

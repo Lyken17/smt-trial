@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$PWD/.cache/system-deps/usr/bin:$PATH"
 
-setup_config="${SETUP_CONFIG:-configs/setup-single-query.env}"
+setup_config="${SETUP_CONFIG:-configs/setup-all.env}"
 if [[ -f "$setup_config" ]]; then
   # Export only build/storage controls to the official command. They do not
   # alter the official selection inputs or seed.

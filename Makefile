@@ -3,7 +3,7 @@ PYTHON ?= .venv/bin/python
 SMTCOMP ?= .venv/bin/smtcomp
 TRACK ?= SingleQuery
 DIVISION ?=
-SETUP_CONFIG ?= configs/setup-single-query.env
+SETUP_CONFIG ?= configs/setup-all.env
 DOWNLOAD_JOBS ?= 8
 DOWNLOAD_SEGMENTS ?= 8
 EXTRACT_JOBS ?= 4
@@ -45,8 +45,7 @@ UC_VALIDATION_RESULTS := $(dir $(RESULTS))unsat_core_validation_results
 UC_VALIDATOR_CACHE := .cache/execution
 UC_VALIDATOR_MANIFEST := work/unsat-core-validator-pool.json
 
-.PHONY: system-deps storage-single-query setup setup-single-query setup-all metadata benchmarks benchmarks-single-query \
-	solver solver-single-query cache select select-single-query select-all execution-tools model-validator \
+.PHONY: system-deps storage setup setup-all metadata benchmarks solver cache select select-all execution-tools model-validator \
 	prepare run validate-model validate-unsat-core generate-unsat-core-validation \
 	manifest-unsat-core-validator-pool build-unsat-core-validator-pool \
 	run-unsat-core-validator-pool run-unsat-core-validator \
@@ -56,7 +55,7 @@ UC_VALIDATOR_MANIFEST := work/unsat-core-validator-pool.json
 system-deps:
 	bash scripts/install_system_deps.sh $(SETUP_CONFIG)
 
-storage-single-query:
+storage:
 	bash scripts/prepare_storage.sh $(SETUP_CONFIG)
 
 setup:
@@ -65,20 +64,10 @@ setup:
 init-configs:
 	$(PYTHON) scripts/init_track_configs.py --track $(TRACK)
 
-# Sequential on purpose: each stage consumes the artefacts produced by the previous one.
-setup-single-query:
-	$(MAKE) system-deps SETUP_CONFIG=$(SETUP_CONFIG)
-	$(MAKE) storage-single-query SETUP_CONFIG=$(SETUP_CONFIG)
-	$(MAKE) setup
-	$(MAKE) benchmarks-single-query SETUP_CONFIG=$(SETUP_CONFIG)
-	$(MAKE) solver-single-query SETUP_CONFIG=$(SETUP_CONFIG)
-	$(MAKE) cache
-	$(MAKE) select-single-query
-
 setup-all: SETUP_CONFIG := configs/setup-all.env
 setup-all:
 	$(MAKE) system-deps SETUP_CONFIG=$(SETUP_CONFIG)
-	$(MAKE) storage-single-query SETUP_CONFIG=$(SETUP_CONFIG)
+	$(MAKE) storage SETUP_CONFIG=$(SETUP_CONFIG)
 	$(MAKE) setup
 	$(MAKE) benchmarks SETUP_CONFIG=$(SETUP_CONFIG)
 	$(MAKE) solver
@@ -98,27 +87,14 @@ benchmarks:
 		EXTRACT_JOBS=$(EXTRACT_JOBS) \
 		$(PYTHON) scripts/fetch_official.py benchmarks
 
-benchmarks-single-query: storage-single-query
-	@set -a; source $(SETUP_CONFIG); set +a; \
-		DOWNLOAD_JOBS=$(DOWNLOAD_JOBS) DOWNLOAD_SEGMENTS=$(DOWNLOAD_SEGMENTS) \
-		EXTRACT_JOBS=$(EXTRACT_JOBS) \
-		$(PYTHON) scripts/fetch_official.py "$$BENCHMARK_COMPONENT"
-
 solver:
 	$(PYTHON) scripts/fetch_official.py solver
-
-solver-single-query:
-	@set -a; source $(SETUP_CONFIG); set +a; \
-		$(PYTHON) scripts/fetch_official.py "$$SOLVER_COMPONENT"
 
 cache: metadata
 	$(SMTCOMP) create-cache .cache/official/data
 
 select: cache benchmarks
 	bash scripts/select_track.sh $(TRACK)
-
-select-single-query: cache benchmarks-single-query
-	bash scripts/select_track.sh SingleQuery
 
 select-all: cache benchmarks
 	bash scripts/select_track.sh SingleQuery
