@@ -46,6 +46,29 @@ answer, or observed result metadata. Harness code, documentation, dependency
 configuration, and tests may be changed only to maintain or audit the harness,
 not to manufacture a better score.
 
+## Parameter evidence and documentation
+
+When editing a configuration, the agent must not guess cvc5 flags from memory.
+It must ground each option in the official cvc5 documentation and/or the local
+binary help output.
+
+Primary references:
+
+- **Local official docs**: `docs/cvc5-official-docs/` (cvc5 1.3.4 complete documentation)
+  - Options: [`docs/cvc5-official-docs/options.html`](docs/cvc5-official-docs/options.html)
+  - Theories: [`docs/cvc5-official-docs/theories/`](docs/cvc5-official-docs/theories/)
+  - Resource limits: [`docs/cvc5-official-docs/resource-limits.html`](docs/cvc5-official-docs/resource-limits.html)
+  - Binary docs: [`docs/cvc5-official-docs/binary/`](docs/cvc5-official-docs/binary/)
+- Official docs: https://cvc5.github.io/docs-ci/docs-main/
+- Official options page: https://cvc5.github.io/docs-ci/docs-main/options.html
+- Local project reference: [`docs/cvc5-options-reference.md`](docs/cvc5-options-reference.md)
+
+**When editing config files, consult the local official documentation first.** The local project reference summarizes the official documentation entry points,
+module structure, and the rule that config edits must follow the
+`default -> division -> division.logic` precedence order. For any candidate flag,
+check that it exists in the current cvc5 help output and that it is appropriate
+for the target Track/Division/Logic.
+
 Each Track/Performance file contains all official Divisions. The Performance
 filename selects an independent candidate before a run;
 it must never be exposed to the solver or used to dispatch individual

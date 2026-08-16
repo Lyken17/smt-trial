@@ -199,6 +199,17 @@ args = ["--another-option"]
 答案、运行顺序或已观察结果分派参数。不得修改官方 metadata、selection、scramble、
 expected status、结果解析和评分公式。
 
+调参时必须以官方 cvc5 文档和当前本地 binary help 为证据，而不是靠记忆或杜撰参数名。
+相关入口：
+
+- **本地官方文档**：[`docs/cvc5-official-docs/options.html`](./docs/cvc5-official-docs/options.html)（cvc5 1.3.4 完整文档）
+- 官方文档首页：https://cvc5.github.io/docs-ci/docs-main/
+- 官方 options：https://cvc5.github.io/docs-ci/docs-main/options.html
+- 本地速查指南：[`docs/cvc5-options-reference.md`](./docs/cvc5-options-reference.md)
+
+本地速查文档总结了官方 cvc5 的 option 模块、theory 模块、变量命名、Boolean/非 Boolean 参数规则，以及对 `Track / Division / Logic` 的调参边界要求。
+**调参前必须阅读本地官方文档中的参数定义，确保每个 option 在当前 cvc5 版本中存在且适用于目标 Track/Division/Logic。**
+
 普通四个 Track 的资源限制直接采用 2025 PDF 和固定 `defs.py`：wall time 1200 秒、
 4 cores、30 GiB memory。Parallel 是官方 128 cores、1000 GiB 的 BenchExec 限制；
 虚拟核仍由操作系统映射到真实 CPU，不能把一台 14-thread 机器的功能冒烟测试称作
