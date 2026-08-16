@@ -39,61 +39,70 @@ https://smt-comp.github.io/2025/rules.pdf 。
 
 ## 硬件与系统环境要求
 
-### 构建和功能测试机器
+### SMT-COMP 2025 官方比赛机器
 
-本仓库提供的是 Linux 执行链路。官方 cvc5 default/incremental 包和官方 trace executor
-均为 GNU/Linux x86-64 ELF，因此完整复现机器必须是 x86-64 Linux；Windows 应通过
-WSL2 使用，但放在 `/mnt/<drive>` 的几十万小文件通常明显慢于 WSL 的 Linux filesystem。
+普通四个 Track 不是在任意“4 核机器”上运行。官方 Machine Specifications 明确写明：
+SingleQuery、Incremental、UnsatCore、ModelValidation 使用 SoSy-Lab BenchCloud 的
+**168 台 apollon 节点**；每台节点配置为：
 
-- CPU：至少 4 个可用逻辑核；scramble 默认自动使用主机核数、最多 16 worker；
-- RAM：至少 32 GiB，另需足够 swap 处理个别约 1.1 GB 的原始 SMT2；
-- 磁盘：`make setup-all` 开始前至少 100 GiB 可用空间，运行结果另计；
-- 网络：两套 benchmark 压缩包约 8 GB，另有 solver/validator 包；
-- 系统：Bash、GNU Make、Python >= 3.11；正式执行需要 BenchExec 可用的 Linux cgroups；
-- ModelValidation：Docker daemon 和 buildx，当前用户必须有 daemon 权限；
-- 文件系统：建议本地 Linux SSD；可用 `EXTERNAL_CACHE_ROOT` 指向大容量本地文件系统。
+| 官方普通 Track 节点 | 规格 |
+|---|---|
+| CPU | Intel Xeon E3-1230 v5 @ 3.40 GHz |
+| 物理核 | 4 cores，全部提供给 solver |
+| 主机内存 | 33 GB RAM |
+| 单次运行内存上限 | 30 GiB |
+| 单次 wall-time 上限 | 1200 秒 |
+| 单次 CPU-time 上限 | 4800 秒（1200 × 4） |
+| 执行基础设施 | SoSy-Lab BenchExec/BenchCloud |
 
-上述是“能够构建并做功能测试”的下限，不等于官方可比跑分环境。内存不足、没有
-cgroup delegation 或在慢速 Windows 挂载盘上运行时，`make smoke-all` 仍可能通过，
-但不能据此报告正式耗时成绩。BenchExec 环境要求来源：
-https://github.com/sosy-lab/benchexec 。WSL 文件系统建议来源：
-https://learn.microsoft.com/windows/wsl/filesystems 。
+官方机器规格页：https://smt-comp.github.io/2025/specs/ 。规则 PDF 说明比赛在这 168 台
+apollon 节点上通过 BenchExec 执行，并将每个 processor 的 4 cores 提供给 solver：
+https://smt-comp.github.io/2025/rules.pdf 。
 
-### 普通 Track 的正式可比环境
+Parallel 使用另一台官方大机器：
 
-SingleQuery、Incremental、UnsatCore、ModelValidation 每个正式 run 固定为：
+| 官方 Parallel 环境 | 规格 |
+|---|---|
+| 整机 | 256 virtual cores、2 TB RAM |
+| 每个正式 solver run | 128 cores、1000 GiB |
+| 时间 | wall 1200 秒、CPU 153600 秒（1200 × 128） |
+| 执行基础设施 | 与其他 Track 相同的 BenchExec-based infrastructure |
 
-| 项目 | 要求 |
-|---|---:|
-| wall-time limit | 1200 秒 |
-| CPU cores | 4 |
-| CPU-time limit | 4800 秒 |
-| memory limit | 30 GiB |
-| 2025 正式节点 CPU | Intel Xeon E3-1230 v5 @ 3.40 GHz |
-| submission 基础容器 | Ubuntu 24.04 |
+“256 virtual cores、2 TB”来自官方 Parallel 页面；“每个 run 分配 128 cores、1000 GiB”
+来自固定 2025 `defs.py` 和其生成的 BenchExec XML。这是整机规格和单任务配额两个层次，
+不能混为一谈。来源：https://smt-comp.github.io/2025/parallel_track/ 和
+https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py 。
+
+### 官方软件执行环境
+
+规则规定 solver 在与以下 competition image 相同安装环境的机器上运行：
+
+```text
+registry.gitlab.com/sosy-lab/benchmarking/competition-scripts/user:latest
+```
+
+2025 Solver Submission 页面说明该镜像基于 Ubuntu 24.04；提交 CI 也会在该镜像中下载
+并运行 solver。正式复现应使用 Linux、BenchExec 容器模式和可用的 cgroups，而不是只
+比较裸跑命令的时间。来源：https://smt-comp.github.io/2025/solver_submission/ 和
+https://gitlab.com/sosy-lab/benchmarking/competition-scripts/#computing-environment-on-competition-machines 。
 
 `seq` 不表示把执行限制改成单核；它是正式结果上的 virtual-sequential 评分视图。
-`24` 也不是 24 秒 timeout，而是正式 1200 秒运行之后应用 `walltime_s <= 24` 的评分
-视图。若需要与官网 wall/CPU time 严格横向比较，还必须尽量匹配 CPU 型号、频率、
-内核、容器、NUMA 和系统负载。来源：
-https://smt-comp.github.io/2025/rules.pdf 、
-https://smt-comp.github.io/2025/solver_submission/ 、
-https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py 和
-https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/benchexec.py 。
+`24` 也不是 24 秒 timeout，而是在正式 1200 秒运行之后应用 `walltime_s <= 24` 的评分
+视图。若 CPU 型号、频率、内核、容器、cgroups、NUMA 或系统负载不同，正确性结果仍可
+用于测试，但 wall/CPU time 不能声称与官方机器严格可比。
 
-### Parallel 的正式可比环境
+### 本地构建要求（非官方比赛机器规格）
 
-Parallel 需要区分整机规格和单次 BenchExec 分配：
+以下仅是运行本仓库构建脚本的本地条件，不能替代上述官方环境：
 
-| 层次 | CPU | RAM | 时间 |
-|---|---:|---:|---:|
-| 官方主机 | 256 virtual cores | 2 TB | — |
-| 每个正式 solver run | 128 cores | 1000 GiB | wall 1200 秒、CPU 153600 秒 |
+- 官方 cvc5 和 trace executor 是 GNU/Linux x86-64 ELF，需 x86-64 Linux；Windows
+  应通过 WSL2 使用；
+- `make setup-all` 检查至少 100 GiB 可用磁盘，正式运行产生的结果空间另计；
+- 两套 benchmark 压缩包约 8 GB；建议使用本地 Linux SSD；
+- 需要 Bash、GNU Make、Python >= 3.11；ModelValidation 构建需要 Docker + buildx；
+- `make smoke-all` 可在较小机器上检查功能，但不能产生官方硬件可比成绩。
 
-虚拟核仍映射到真实硬件资源；不能在 8/16/32 核机器上只修改配置数字后声称得到官方
-可比 Parallel 成绩。小机器只能运行 `make smoke-all` 的功能检查。来源：
-https://smt-comp.github.io/2025/parallel_track/ 、
-https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py 。
+WSL 文件系统建议：https://learn.microsoft.com/windows/wsl/filesystems 。
 
 ## 全 Track 一键构建
 
