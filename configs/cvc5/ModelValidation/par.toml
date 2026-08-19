@@ -1,0 +1,41 @@
+# Independent tuning candidate for ModelValidation/par.
+# Rules: https://smt-comp.github.io/2025/rules.pdf
+# Official scoring: https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
+[meta]
+name = "cvc5-modelvalidation-par"
+track = "ModelValidation"
+performance = "par"
+jobs = 1
+cores = 4
+memory_mib = 30720
+wall_limit_s = 1200
+
+[default]
+args = ["--fp-exp", "--use-portfolio"]
+
+[division.QF_ADT_BitVec]
+args = []
+[division.QF_ADT_LinArith]
+args = []
+[division.QF_Bitvec]
+args = []
+[division.QF_Datatypes]
+args = []
+[division.QF_Equality]
+args = []
+[division.QF_Equality_Bitvec]
+args = []
+[division.QF_Equality_LinearArith]
+args = []
+[division.QF_Equality_NonLinearArith]
+args = []
+[division.QF_FPArith]
+args = []
+[division.QF_LinearIntArith]
+args = []
+[division.QF_LinearRealArith]
+args = []
+[division.QF_NonLinearIntArith]
+args = []
+[division.QF_NonLinearRealArith]
+args = []

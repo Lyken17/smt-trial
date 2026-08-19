@@ -1,6 +1,0 @@
-(set-logic UF)
-(set-info :status sat)
-(declare-sort U 0)
-(assert (forall ((x U)) (= x x)))
-(check-sat)
-(exit)

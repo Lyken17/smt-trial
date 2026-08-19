@@ -1,38 +1,126 @@
-# Challenge Agent Instructions
+# SMT-COMP 2025 cvc5 tuning repository rules
 
-These instructions apply when working on a challenge submission. Repository
-maintainers may edit infrastructure while developing the challenge itself.
+## Supported scope
 
-## Objective
+The supported regular competition tracks are `SingleQuery`, `Incremental`,
+`UnsatCore`, `ModelValidation`, and `Parallel`. `make smoke-all` is the required
+small functional check. A track must not be reported as a full local 2025
+reproduction unless its complete selection passes `make check-selection` (or
+all five pass `make check-all-selections`) and its validator/execution/scoring
+path was run. Cloud was not held in 2025 and ProofExhibition has no regular
+score; do not invent results for either.
 
-Maximize the number of correct SMT results reported by `make score`. The
-starter score is 73/95. Wrong `sat` or `unsat` answers are invalid; prefer
-`unknown` when cvc5 cannot decide a case safely.
+The organizers did not publish the final UnsatCore validator identity
+selection. The repository's public-pool mode is the maximal deterministic pool
+of publicly identifiable sound 2025 Single Query solvers and must retain
+`exact_organizer_pool=false`. Never describe it as the unknown exact private
+organizer selection.
 
-## Allowed Edit
+## Immutable official inputs
 
-Edit `submission.py` only. Use its `logic` and `workers` inputs to select valid
-cvc5 modes, job counts, replicas, and command-line options.
+Do not change the pinned SMT-COMP tool, benchmark metadata, historical results,
+raw benchmark archives, selected benchmark membership, selection seed,
+scramble IDs, expected statuses, Track/Division/Logic mapping, execution limits,
+result parser, or score computation in order to improve a tuning result.
 
-Do not modify:
+Official references:
 
-- `tests/` or `tests/submission_tests.py`;
-- `benchmarks/`, manifests, expected statuses, or checksums;
-- `cvc5_cloud/`, `aws-build/`, `configs/`, or timeout handling;
-- repository integrity checks or result parsing.
+- https://smt-comp.github.io/2025/rules.pdf
+- https://github.com/SMT-COMP/smt-comp.github.io/tree/smtcomp25
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/selection.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scramble_benchmarks.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/defs.py
+- https://github.com/SMT-COMP/smt-comp.github.io/blob/smtcomp25/smtcomp/scoring.py
+- https://doi.org/10.5281/zenodo.16740866
+- https://doi.org/10.5281/zenodo.15493096
 
-Do not hardcode answers, benchmark identities, checksums, or evaluation order.
-Do not infer answers from expected-status metadata.
+## Tuning boundary
 
-## Workflow
+For a tuning experiment, solver options may be changed only in:
 
-1. Read `submission.py` and cvc5's option help.
-2. Form a solver-configuration hypothesis.
-3. Run a targeted logic with
-   `make score SCORE_ARGS="--logic LOGIC"`.
-4. Run `make smoke` after every configuration family change.
-5. Run the complete `make score` before reporting an improvement.
-6. Report solved, wrong, unknown, wall time, and PAR-2.
+- `configs/cvc5/<Track>/<Performance>.toml`
 
-Agent-assisted search, web research, and automated experiments are allowed.
-Keep experimental logs and generated files out of Git.
+Options may depend on Track, Division, and SMT-LIB Logic. They must not depend
+on benchmark name, path, checksum, expected status, execution order, previous
+answer, or observed result metadata. Harness code, documentation, dependency
+configuration, and tests may be changed only to maintain or audit the harness,
+not to manufacture a better score.
+
+## Parameter evidence and documentation
+
+When editing a configuration, the agent must not guess cvc5 flags from memory.
+It must ground each option in the official cvc5 documentation and/or the local
+binary help output.
+
+Primary references:
+
+- **Local official docs**: `docs/cvc5-official-docs/` (cvc5 1.3.4 complete documentation)
+  - Options: [`docs/cvc5-official-docs/options.html`](docs/cvc5-official-docs/options.html)
+  - Theories: [`docs/cvc5-official-docs/theories/`](docs/cvc5-official-docs/theories/)
+  - Resource limits: [`docs/cvc5-official-docs/resource-limits.html`](docs/cvc5-official-docs/resource-limits.html)
+  - Binary docs: [`docs/cvc5-official-docs/binary/`](docs/cvc5-official-docs/binary/)
+- Official docs: https://cvc5.github.io/docs-ci/docs-main/
+- Official options page: https://cvc5.github.io/docs-ci/docs-main/options.html
+- Local project reference: [`docs/cvc5-options-reference.md`](docs/cvc5-options-reference.md)
+
+**When editing config files, consult the local official documentation first.** The local project reference summarizes the official documentation entry points,
+module structure, and the rule that config edits must follow the
+`default -> division -> division.logic` precedence order. For any candidate flag,
+check that it exists in the current cvc5 help output and that it is appropriate
+for the target Track/Division/Logic.
+
+Each Track/Performance file contains all official Divisions. The Performance
+filename selects an independent candidate before a run;
+it must never be exposed to the solver or used to dispatch individual
+benchmarks. Every experiment must rerun its complete Division. Scores from
+different experiment configurations must not be combined into one claimed
+submission result.
+
+Wrong SAT/UNSAT answers are official scoring errors and must never be hidden or
+filtered. The `24` performance is the official `walltime_s <= 24` scoring view;
+it is not a 24-second execution limit. Formal SingleQuery, Incremental,
+UnsatCore, and ModelValidation execution uses the official 1200-second wall
+limit, 4 cores, 4800 CPU seconds, and 30 GiB memory. Parallel uses 1200 seconds,
+128 cores, 153600 CPU seconds, and 1000 GiB. A smaller-host functional smoke is
+not an official-comparable Parallel timing result.
+
+## Required workflow and reporting
+
+Build all tracks with `make setup-all`. There is no reduced SingleQuery-only
+setup path. The resumable selection wrapper must call
+the pinned official selection and scrambling functions and may skip a task only
+when both its generated yml and non-empty scrambled SMT2 already exist. It may
+repair a missing YAML from an existing non-empty scrambled file only through
+the pinned official YAML generator and identical expected-status semantics.
+Complete selections are: SingleQuery 129,361; Incremental 22,942; UnsatCore
+70,604; ModelValidation 59,762; Parallel 400. Never round an incomplete cache
+up to an official total.
+
+The official Dolmen build's old Debian URLs now return 404. The compatibility
+step may activate only the date-pinned Debian snapshot already recorded in the
+pinned base image; it must not change the Dolmen commit, base-image digest,
+dependency declarations, compile command, or tests. Source:
+https://snapshot.debian.org/archive/debian/20240612T000000Z/
+
+Run and score one Division explicitly, for example:
+
+```bash
+make run TRACK=SingleQuery DIVISION=QF_LinearIntArith RUN_ID=<run-id>
+make score TRACK=SingleQuery DIVISION=QF_LinearIntArith \
+  PERFORMANCE=24 RUN_ID=<run-id>
+```
+
+Every reported tuning result must include Track, Division, performance kind,
+cvc5 configuration/options, cvc5 revision, host CPU/RAM, official-tool revision,
+and whether the full official selection passed the documented integrity checks.
+Competition rankings are per Division and performance; any cross-Division sum
+must be labeled non-official diagnostic output.
+
+## Portability
+
+Do not commit usernames, passwords, home-directory paths, drive letters,
+machine names, regional package mirrors, fixed distribution codenames, fixed
+CPU architectures, or generated cache symlinks. Host-dependent storage and
+parallelism must use `configs/setup-all.env`,
+environment overrides, or automatic capability detection. Runtime files below
+`.cache`, `work`, and `results` are local artifacts and must remain untracked.

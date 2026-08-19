@@ -1,7 +1,0 @@
-(set-logic QF_S)
-(set-info :status unsat)
-(declare-const x String)
-(assert (= (str.len x) 2))
-(assert (= x "three"))
-(check-sat)
-(exit)
